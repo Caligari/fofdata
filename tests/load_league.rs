@@ -2,21 +2,25 @@
 
 use std::{fs::File, io::BufReader, collections::BTreeMap};
 use binrw::{BinReaderExt, Error};
+use fofdata::LeagueInfo;
 use log::{info, debug, warn, error};
 use num_traits::FromPrimitive;
 
 mod common;
 
 #[test]
-fn league_load() {
+fn league_9_load() {
     common::setup_logger(module_path!()).expect("log did not start");
     info!("Starting");
 
-    let league_info = fofdata::find_leagues();
+    let league_info = fofdata::find_leagues_9();
 
-    for (league_name, league_file_info) in league_info {
+    for (league_name, mut league_file_info) in league_info {
         info!("processing league: {}", league_name);
-        let league_info_path = league_file_info.datapath.join(fofdata::LEAGUEINFO_FILENAME);
+        league_file_info.load_league_data();
+        // TODO: ouput week data
+
+        let league_info_path = league_file_info.datapath.join(fofdata::LEAGUEINFO_9_FILENAME);
 
         info!("loading league info: {}", league_info_path.to_string_lossy());
         let lf = File::open(league_info_path).unwrap_or_else(|e| { panic!("Unable to open league file: {}", e) });

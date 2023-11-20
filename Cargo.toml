@@ -5,6 +5,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+# [features]
+# fof9 = []
+# fof8 = []
+
 [dependencies]
 log = "0.4"
 fern = "0.6"
@@ -14,3 +18,6 @@ num-derive = "0.4"
 encoding-next = "0.3"
 directories = "5.0"
 walkdir = "2"
+multimap = "0.9"
+lazy_static = "1.4"
+regex = "1.5"
