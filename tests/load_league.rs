@@ -26,7 +26,7 @@ fn league_9_load() {
         let lf = File::open(league_info_path).unwrap_or_else(|e| { panic!("Unable to open league file: {}", e) });
         let mut leaguefile = BufReader::new(lf);
         debug!("opened league file");
-        let league_info_result: Result<fofdata::LeagueData, Error> = leaguefile.read_ne();
+        let league_info_result: Result<fofdata::League9Data, Error> = leaguefile.read_ne();
         match league_info_result {
             Ok(league_info) => {
                 debug!("league: {}", league_info.league_name.string);

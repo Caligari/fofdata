@@ -9,7 +9,7 @@ use log::error;
 #[allow(dead_code)]
 #[derive(BinRead, BinWrite, Debug)]
 #[brw(magic = b"\x0c\0\0\0STRUCTLEAGUE")]  // what is the Z? and three NULLs?
-pub struct LeagueData {
+pub struct League9Data {
     some1: u32,  // Z?
     some2: u32,  // ?
     some3: u32,  // ? null

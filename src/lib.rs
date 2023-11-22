@@ -1,13 +1,15 @@
-use std::{path::{PathBuf, Path}, collections::BTreeMap, fs};
+use std::{path::{PathBuf, Path}, collections::BTreeMap, fs::{self, File}, io::BufReader};
 use directories::BaseDirs;
-use log::{info, warn, debug};
+use log::{info, warn, debug, error};
 use multimap::MultiMap;
 use walkdir::WalkDir;
 use lazy_static::lazy_static;
 use regex::Regex;
+use binrw::BinReaderExt;
+use num_traits::FromPrimitive;
 
 mod fof9_leaguedata;
-pub use fof9_leaguedata::LeagueData;
+pub use fof9_leaguedata::League9Data;
 
 pub const LEAGUES_9_PATH: &str = "Solecismic Software\\Front Office Football Nine\\saved_games";
 pub const LEAGUEINFO_9_FILENAME: &str = "league.dat";
@@ -54,6 +56,12 @@ pub trait LeagueInfo {
 
     fn get_week_index ( &self ) -> &Option<MultiMap<u16, u8>>;
 
+    fn get_teams_list ( &self ) -> Vec<String>;
+
+    // may not need path
+    fn get_week_path ( &self, year: u16, week: u8 ) -> PathBuf;
+    fn get_week_file ( &self, year: u16, week: u8 ) -> BufReader<File>;  // TODO: could we digest it and pass that?
+
     fn get_weeks_list_for_year ( &self, year: u16 ) -> Option<Vec<u8>> {
         if let Some(week_index) = &self.get_week_index() {
             if let Some(week_list) = week_index.get_vec(&year) {
@@ -80,10 +88,21 @@ pub trait LeagueInfo {
             week_index.keys().len()
         } else { 0 }
     }
+
+    fn get_year ( &self, selection_index: usize ) -> Option<u16> {
+        if let Some(week_index) = &self.get_week_index() {
+            if selection_index < week_index.keys().len() {
+                let mut years: Vec<u16> = week_index.keys().copied().collect();
+                years.sort();
+                years.reverse();
+                Some(years[selection_index])
+            } else { None }
+        } else { None }
+    }
 }
 
 #[allow(dead_code)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct League9FileInfo {
     pub name: String,
     pub datapath: PathBuf,
@@ -122,8 +141,54 @@ impl LeagueInfo for League9FileInfo {
         }  // else, week data already loaded
     }
 
+    fn get_week_path ( &self, year: u16, week: u8 ) -> PathBuf {
+        let filename = format!("year_{}_week_{}.dat", &year, &week);
+        self.gamepath.join(filename)
+    }
+
+    fn get_week_file ( &self, year: u16, week: u8 ) -> BufReader<File> {
+        let filename = format!("year_{}_week_{}.dat", &year, &week);
+        let filepath = self.gamepath.join(&filename);
+        debug!("opening game week: {}", filename);
+        let file = File::open(filepath).unwrap_or_else(|_| panic!("Unable to open week file: {}", filename));
+        BufReader::new(file)
+    }
+
     fn get_week_index ( &self ) -> &Option<MultiMap<u16, u8>> {
         &self.week_index
+    }
+
+    fn get_teams_list ( &self ) -> Vec<String> {
+        let league_info_path = self.datapath.join(LEAGUEINFO_9_FILENAME);
+
+        info!("loading league info from: {}", league_info_path.to_string_lossy());
+        let lf = File::open(league_info_path).unwrap_or_else(|e| { panic!("Unable to open league file: {}", e) });  // TODO: no panic
+        let mut leaguefile = BufReader::new(lf);
+        debug!("opened league file");
+        let league_info_result: Result<League9Data, binrw::Error> = leaguefile.read_ne();
+        match league_info_result {
+            Ok(league_info) => {
+                debug!("league: {}", league_info.league_name.string);
+                debug!("league number of teams: {}", league_info.number_teams);
+                if league_info.number_teams != league_info.teams_len {
+                    error!("league number of teams does not equal length of teams list ({})", league_info.teams_len);
+                    Vec::new()
+                } else {
+                    let mut team_info = BTreeMap::<String, usize>::new();
+                    for team in &league_info.teams {
+                        team_info.insert(team.team_city.to_string(), usize::from_u32(team.team_number).unwrap());  // TODO: better checking
+                    }
+                    let teams: Vec<String> = team_info.keys().cloned().collect();
+                    debug!("all teams: {:?}", teams);
+                    teams
+                }
+            },
+
+            Err(err) => {
+                error!("unable to parse league: {:?}", err);
+                Vec::new()
+            }
+        }
     }
 }
 
