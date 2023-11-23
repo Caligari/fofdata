@@ -1,5 +1,6 @@
 use std::{path::{PathBuf, Path}, collections::BTreeMap, fs::{self, File}, io::BufReader};
 use directories::BaseDirs;
+use fof9_weekdata::Week9Data;
 use log::{info, warn, debug, error};
 use multimap::MultiMap;
 use walkdir::WalkDir;
@@ -8,8 +9,11 @@ use regex::Regex;
 use binrw::BinReaderExt;
 use num_traits::FromPrimitive;
 
+mod fof9_utility;
 mod fof9_leaguedata;
+mod fof9_weekdata;
 pub use fof9_leaguedata::League9Data;
+pub use fof9_weekdata::Game9Section;
 
 pub const LEAGUES_9_PATH: &str = "Solecismic Software\\Front Office Football Nine\\saved_games";
 pub const LEAGUEINFO_9_FILENAME: &str = "league.dat";
@@ -108,6 +112,17 @@ pub struct League9FileInfo {
     pub datapath: PathBuf,
     pub gamepath: PathBuf,
     pub week_index: Option<MultiMap<u16, u8>>,  // year, week
+}
+
+#[allow(dead_code)]
+impl League9FileInfo {
+    pub fn get_week ( &self, year: u16, week: u8 ) -> Option<Week9Data> {
+        let mut file = self.get_week_file(year, week);
+
+        if let Ok(week_data) = file.read_ne() {
+            Some(week_data)
+        } else { None }
+    }
 }
 
 impl LeagueInfo for League9FileInfo {

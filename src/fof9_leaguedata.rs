@@ -1,9 +1,8 @@
-use std::fmt::{Display, Debug};
-
-use binrw::{BinRead, BinWrite};
-use encoding::{all::ISO_8859_1, Encoding};
+use std::fmt::Debug;
+use binrw::{BinRead, BinWrite, helpers::until_eof};
 use num_traits::FromPrimitive;
-use log::error;
+
+use crate::fof9_utility::FixedString;
 
 
 #[allow(dead_code)]
@@ -63,7 +62,8 @@ pub struct League9Data {
     #[br(count = teams_len)]
     pub teams: Vec<TeamInfo>,
 
-    #[br(count = 27216)]
+    // #[br(count = 27216)]
+    #[br(parse_with = until_eof)]  // TODO: understand this final section
     pad3: Vec<u32>,
 }
 
@@ -149,29 +149,4 @@ pub struct PlaybookPlayInfo {
 pub struct DivisionInfo {
     pub division_name: FixedString,
     pub number_teams: u32,
-}
-
-#[allow(dead_code)]
-#[derive(BinRead, BinWrite, PartialEq)]
-pub struct FixedString {
-    #[bw(map = |_| u32::from_usize(string.len()).unwrap())]
-    len: u32,
-    #[bw(map = |s| s.as_bytes().to_vec())]
-    #[br(count = len, map = |s: Vec<u8>| match ISO_8859_1.decode(&s, encoding::DecoderTrap::Strict) {
-        Ok(out) => out,
-        Err(_)  => { error!("unable to convert text {:?}", s); "<bad conversion>".to_string() }
-    })]
-    pub string: String,
-}
-
-impl Display for FixedString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.string)
-    }
-}
-
-impl Debug for FixedString {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.string)
-    }
 }
