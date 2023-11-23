@@ -52,9 +52,7 @@ pub enum Game9Section {
         yardline: u32,
         home_timeouts: u32,
         away_timeouts: u32,
-        play_type: u32,
-        #[br(count = 0x1a5)]
-        data: Vec<u32>
+        play: GamePlay9,
     },
 
     #[br(magic = b"\x08\0\0\0END_GAME")] End {
@@ -86,12 +84,85 @@ impl Display for Game9Section {
                 write!(f, "{}, {} vs {}, {}", when, home_team.city, away_team.city, location)
             },
 
-            Game9Section::Play { quarter, minutes_remaining, seconds_remaining, off_team, down, yards_to_go, yardline, home_timeouts, away_timeouts, play_type, data } => {
-                write!(f, "{}-{}-{}_{} ({}Q: {}:{}) play type {}", down, yards_to_go, off_team, yardline, quarter, minutes_remaining, seconds_remaining, play_type)
+            Game9Section::Play { quarter, minutes_remaining, seconds_remaining, off_team, down, yards_to_go, yardline, home_timeouts, away_timeouts, play } => {
+                write!(f, "{}-{}-{}_{} ({}Q: {}:{}) {}", down, yards_to_go, off_team, yardline, quarter, minutes_remaining, seconds_remaining, play)
             },
 
             Game9Section::End { player_of_game, home_drive_len, away_drive_len, home_drive, away_drive, home_pass_stats, away_pass_stats, home_run_stats, away_run_stats, home_possession, away_possession } => {
                 write!(f, "")
+            },
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub enum GamePlay9 {
+    #[br(magic = 1u32)] FieldGoal {
+        #[br(count = 0x1a5)]
+        data: Vec<u32>
+    },
+
+    #[br(magic = 2u32)] Kickoff {
+        #[br(count = 0x1a5)]
+        data: Vec<u32>
+    },
+
+    #[br(magic = 3u32)] OnsideKick {
+        #[br(count = 0x1a5)]
+        data: Vec<u32>
+    },
+
+    #[br(magic = 4u32)] Punt {
+        #[br(count = 0x1a5)]
+        data: Vec<u32>
+    },
+
+    #[br(magic = 5u32)] Run {
+        #[br(count = 0x1a5)]
+        data: Vec<u32>
+    },
+
+    #[br(magic = 6u32)] Pass {
+        #[br(count = 0x1a5)]
+        data: Vec<u32>
+    },
+
+    #[br(magic = 7u32)] Special {
+        #[br(count = 0x1a5)]
+        data: Vec<u32>
+    },
+}
+
+impl Display for GamePlay9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            GamePlay9::FieldGoal { data } => {
+                write!(f, "Field Goal")
+            },
+
+            GamePlay9::Kickoff { data } => {
+                write!(f, "Kickoff")
+            },
+
+            GamePlay9::OnsideKick { data } => {
+                write!(f, "Onside Kick")
+            },
+
+            GamePlay9::Punt { data } => {
+                write!(f, "Punt")
+            },
+
+            GamePlay9::Run { data } => {
+                write!(f, "Run")
+            },
+
+            GamePlay9::Pass { data } => {
+                write!(f, "Pass")
+            },
+
+            GamePlay9::Special { data } => {
+                write!(f, "Special Play {} {} {} {} {} {} {} {}", data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7])
             },
         }
     }
