@@ -13,7 +13,7 @@ mod fof9_utility;
 mod fof9_leaguedata;
 mod fof9_weekdata;
 pub use fof9_leaguedata::League9Data;
-pub use fof9_weekdata::Game9Section;
+pub use fof9_weekdata::{Game9Section, GamePlay9};
 
 pub const LEAGUES_9_PATH: &str = "Solecismic Software\\Front Office Football Nine\\saved_games";
 pub const LEAGUEINFO_9_FILENAME: &str = "league.dat";
@@ -119,9 +119,16 @@ impl League9FileInfo {
     pub fn get_week ( &self, year: u16, week: u8 ) -> Option<Week9Data> {
         let mut file = self.get_week_file(year, week);
 
-        if let Ok(week_data) = file.read_ne() {
-            Some(week_data)
-        } else { None }
+        match file.read_ne() {
+            Ok(week_data) => {
+                Some(week_data)
+            },
+
+            Err(err) => {
+                error!("unable to read week file: {}", err);
+                None
+            }
+        }
     }
 }
 
