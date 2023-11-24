@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use binrw::{BinRead, helpers::until_eof};
+use binrw::{BinRead, helpers::{until_eof, until}};
 
 use crate::fof9_utility::FixedString;
 
@@ -10,13 +10,15 @@ use crate::fof9_utility::FixedString;
 pub struct Week9Data {
     // some number of games
     #[br(parse_with = until_eof)]
-    pub sections: Vec<Game9Section>,
+    pub games: Vec<Game9Data>,
 }
 
 #[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct Game9Data {
     // begin, plays, end
+    #[br(parse_with = until(|section| matches!(section, Game9Section::End{..})))]
+    pub sections: Vec<Game9Section>,
 }
 
 #[allow(dead_code)]
