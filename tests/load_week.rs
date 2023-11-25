@@ -1,4 +1,4 @@
-use fofdata::{LeagueInfo, Game9Section, GamePlay9};
+use fofdata::{LeagueInfo, Game9Section,};
 use log::{info, debug, error};
 
 mod common;
@@ -12,7 +12,7 @@ fn load_week ( ) {
     const YEAR_SELECTION: usize = 0;
     const WEEK: u8 = 1;
 
-    let mut done = false;
+    let mut done = true;
 
     let mut league_info = fofdata::find_leagues_9();
 
@@ -32,30 +32,34 @@ fn load_week ( ) {
                                     Game9Section::Start {..} => {
                                         debug!("starting game: {}", section);
                                     },
-                                    Game9Section::Play {..} => {
-                                        debug!("{}", section)
+                                    Game9Section::Play {quarter, minutes_remaining, seconds_remaining, down, yards_to_go, yardline, play, ..} => {
+                                        debug!("{}-{}-{} ({}Q: {}:{:02}), {}", down, yards_to_go, game.field_yardline(*yardline), quarter, minutes_remaining, seconds_remaining, play);
                                     },
                                     Game9Section::End {..} => {
                                         debug!("ending game");
                                     },
                                 }
                             }
-                            done = true;
                         }
                     } else {
                         error!("unable to load week 1 for year 0 ({}) in league {}", year, LEAGUE_NAME);
+                        done = false;
                     }
                 } else {
                     error!("no weeks found for year 0 ({}) in league {}", year, LEAGUE_NAME);
+                    done = false;
                 }
             } else {
                 error!("unable to find weeks in year 0 ({}) in league {}", year, LEAGUE_NAME);
+                done = false;
             }
         } else {
             error!("unable to find year 0 in league {}", LEAGUE_NAME);
+            done = false;
         }
     } else {
         error!("unable to find league {}", LEAGUE_NAME);
+        done = false;
     }
 
     assert!(done);
@@ -70,7 +74,7 @@ fn load_all_weeks ( ) {
     const LEAGUE_NAME: &str = "Try_2";
     const YEAR_SELECTION: usize = 0;
 
-    let mut done = false;
+    let mut done = true;
 
     let mut league_info = fofdata::find_leagues_9();
 
@@ -90,14 +94,8 @@ fn load_all_weeks ( ) {
                                     Game9Section::Start {..} => {
                                         debug!("starting game: {}", section);
                                     },
-                                    Game9Section::Play {..} => {
-                                        debug!("{}", section)
-                                        // match play {
-                                        //     GamePlay9::Special {..} => {
-                                        //         debug!("{}", section)
-                                        //     }
-                                        //     _ => {}
-                                        // }
+                                    Game9Section::Play {quarter, minutes_remaining, seconds_remaining, down, yards_to_go, yardline, play, ..} => {
+                                        debug!("{}-{}-{} ({}Q: {}:{:02}), {}", down, yards_to_go, game.field_yardline(*yardline), quarter, minutes_remaining, seconds_remaining, play);
                                     },
                                     Game9Section::End {..} => {
                                         debug!("ending game");
@@ -105,20 +103,23 @@ fn load_all_weeks ( ) {
                                     },
                                 }
                             }
-                            done = true;
                         }
                     } else {
                         error!("unable to load week {} for year 0 ({}) in league {}", week_num, year, LEAGUE_NAME);
+                        done = false;
                     }
                 }
             } else {
                 error!("unable to find weeks in year 0 ({}) in league {}", year, LEAGUE_NAME);
+                done = false;
             }
         } else {
             error!("unable to find year 0 in league {}", LEAGUE_NAME);
+            done = false;
         }
     } else {
         error!("unable to find league {}", LEAGUE_NAME);
+        done = false;
     }
 
     assert!(done);
