@@ -148,7 +148,8 @@ impl Display for Game9Section {
 }
 
 #[allow(dead_code)]
-#[derive(BinRead, Debug)]
+#[derive(Debug)]
+#[binread]
 pub enum GamePlay9 {
     #[br(magic = 1u32)] FieldGoal {
         #[br(count = 421)]
@@ -172,13 +173,47 @@ pub enum GamePlay9 {
 
     #[br(magic = 5u32)] Run {
         formation: FormationData9,
-        #[br(count = 414)]
+
+        #[br(map = |val: u32| { assert!(val < 2); val == 1})]
+        start_drive: bool,
+
+        // #[br(temp)]
+        num_blitz: u32,
+        #[br(count = 10)]  // temp
+        def_assign: Vec<DefensiveAssignment9>,
+
+        #[br(calc = def_assign.iter().enumerate().filter_map(|(pos, assign)| if matches!(assign, DefensiveAssignment9::Blitz) { Some(pos) } else { None }).collect())]
+        defensive_blitzers: Vec<usize>,
+        #[br(calc = def_assign.iter().enumerate().filter_map(|(pos, assign)| if matches!(assign, DefensiveAssignment9::Spy) { Some(pos) } else { None }).collect())]
+        defensive_spies: Vec<usize>,
+
+        #[br(assert(num_blitz == u32::from_usize(defensive_blitzers.len()).unwrap()))]
+        #[br(assert(formation.defensive_special.has_spy() == (defensive_spies.len() == 1)))]
+
+        #[br(count = 402)]
         data: Vec<u32>
     },
 
     #[br(magic = 6u32)] Pass {
         formation: FormationData9,
-        #[br(count = 414)]
+
+        #[br(map = |val: u32| { assert!(val < 2); val == 1})]
+        start_drive: bool,
+
+        // #[br(temp)]
+        num_blitz: u32,
+        #[br(count = 10)]  // temp
+        def_assign: Vec<DefensiveAssignment9>,
+
+        #[br(calc = def_assign.iter().enumerate().filter_map(|(pos, assign)| if matches!(assign, DefensiveAssignment9::Blitz) { Some(pos) } else { None }).collect())]
+        defensive_blitzers: Vec<usize>,
+        #[br(calc = def_assign.iter().enumerate().filter_map(|(pos, assign)| if matches!(assign, DefensiveAssignment9::Spy) { Some(pos) } else { None }).collect())]
+        defensive_spies: Vec<usize>,
+
+        #[br(assert(num_blitz == u32::from_usize(defensive_blitzers.len()).unwrap()))]
+        #[br(assert(formation.defensive_special.has_spy() == (defensive_spies.len() == 1)))]
+
+        #[br(count = 402)]
         data: Vec<u32>
     },
 
@@ -218,12 +253,12 @@ impl Display for GamePlay9 {
                 write!(f, "Punt")
             },
 
-            GamePlay9::Run { formation, .. } => {
-                write!(f, "Run ({})", formation)
+            GamePlay9::Run { formation, defensive_blitzers, defensive_spies, .. } => {
+                write!(f, "Run ({} - {}:{:?}, {:?})", formation, defensive_blitzers.len(), &defensive_blitzers, &defensive_spies)
             },
 
-            GamePlay9::Pass { formation, .. } => {
-                write!(f, "Pass ({})", formation)
+            GamePlay9::Pass { formation, defensive_blitzers, defensive_spies, .. } => {
+                write!(f, "Pass ({} - {}:{:?}, {:?})", formation, defensive_blitzers.len(), &defensive_blitzers, &defensive_spies)
             },
 
             GamePlay9::Special { specialplay, extra_point, .. } => {
@@ -242,7 +277,7 @@ impl Display for GamePlay9 {
 pub struct FormationData9 {
     offensive_formation: OffensiveFormation9,
     offensive_personnel: OffensivePersonnel9,
-    defensive_alignment: DefensiveSpy9,
+    def_team: u32,  // 0 or 1
     defensive_personnel: DefensivePersonnel9,
     defensive_coverage: DefensiveCoverage9,
     defensive_front: DefensiveFront9,
@@ -251,9 +286,9 @@ pub struct FormationData9 {
 
 impl Display for FormationData9 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {} | {} {} {} {} {}",
+        write!(f, "{} {} | {} {} {} {}",
             self.offensive_formation, self.offensive_personnel,
-            self.defensive_front, self.defensive_personnel, self.defensive_coverage, self.defensive_alignment, self.defensive_special,
+            self.defensive_front, self.defensive_personnel, self.defensive_coverage, self.defensive_special,
         )
     }
 }
@@ -542,25 +577,8 @@ impl Display for OffensiveFormation9 {
 
 #[allow(dead_code)]
 #[derive(BinRead, Debug)]
-pub enum DefensiveSpy9 {
-	#[br(magic = 0u32)] None,
-	#[br(magic = 1u32)] Spy,
-}
-
-impl Display for DefensiveSpy9 {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            DefensiveSpy9::None => "",
-            DefensiveSpy9::Spy => "Spy",
-        })
-    }
-}
-
-
-#[allow(dead_code)]
-#[derive(BinRead, Debug)]
 pub enum DefensivePersonnel9 {
-	#[br(magic = 0u32)] Normal,
+	#[br(magic = 0u32)] Man,
 	#[br(magic = 1u32)] Nickel,
 	#[br(magic = 2u32)] Dime,
 	#[br(magic = 3u32)] Prevent,
@@ -570,7 +588,7 @@ pub enum DefensivePersonnel9 {
 impl Display for DefensivePersonnel9 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            DefensivePersonnel9::Normal => "Man to Man",
+            DefensivePersonnel9::Man => "Man",  // Man to Man
             DefensivePersonnel9::Nickel => "Nickel",
             DefensivePersonnel9::Dime => "Dime",
             DefensivePersonnel9::Prevent => "Prevent",
@@ -647,8 +665,8 @@ impl Display for DefensiveFront9 {
 #[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum SpecialCoverage9 {
-	#[br(magic = 0u32)] ManNone,
-	#[br(magic = 1u32)] NickleNone,
+	#[br(magic = 0u32)] None,
+	#[br(magic = 1u32)] Spy,
 	#[br(magic = 10u32)] What10,
 	#[br(magic = 11u32)] What11,
     #[br(magic = 20u32)] What20,
@@ -661,21 +679,47 @@ pub enum SpecialCoverage9 {
     #[br(magic = 51u32)] What51,
 }
 
+#[allow(dead_code)]
+impl SpecialCoverage9 {
+    pub fn has_spy ( &self ) -> bool {
+        matches!(self, SpecialCoverage9::Spy | SpecialCoverage9::What11 | SpecialCoverage9::What21 | SpecialCoverage9::What31 |
+            SpecialCoverage9::What41 | SpecialCoverage9::What51)
+    }
+}
+
 impl Display for SpecialCoverage9 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            SpecialCoverage9::ManNone => "",
-            SpecialCoverage9::NickleNone => "",
-            SpecialCoverage9::What10 => "DoubleTop/10",
-            SpecialCoverage9::What11 => "DoubleSecond/11",
+            SpecialCoverage9::None => "",
+            SpecialCoverage9::Spy => "Spy",
+            SpecialCoverage9::What10 => "DoubleTop",
+            SpecialCoverage9::What11 => "DoubleTop Spy/11",
             SpecialCoverage9::What20 => "DoubleTop/20",
-            SpecialCoverage9::What21 => "DoubleSecond/21?",
+            SpecialCoverage9::What21 => "DoubleTop Spy/21",
             SpecialCoverage9::What30 => "DoubleTop/30",
-            SpecialCoverage9::What31 => "DoubleSecond/31?",
+            SpecialCoverage9::What31 => "DoubleTop Spy/31",
             SpecialCoverage9::What40 => "DoubleTop/40",
-            SpecialCoverage9::What41 => "DoubleSecond/41?",
+            SpecialCoverage9::What41 => "DoubleTop Spy/41",
             SpecialCoverage9::What50 => "DoubleTop/50",
-            SpecialCoverage9::What51 => "DoubleSecond/51",
+            SpecialCoverage9::What51 => "DoubleTop Spy/51",
+        })
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+enum DefensiveAssignment9 {
+    #[br(magic = 0u32)] Normal,
+    #[br(magic = 1u32)] Blitz,
+    #[br(magic = 2u32)] Spy,
+}
+
+impl Display for DefensiveAssignment9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            DefensiveAssignment9::Normal => "",
+            DefensiveAssignment9::Blitz => "Blitz",
+            DefensiveAssignment9::Spy => "Spy",
         })
     }
 }

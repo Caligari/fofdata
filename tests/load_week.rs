@@ -1,4 +1,4 @@
-use fofdata::{LeagueInfo, Game9Section,};
+use fofdata::{LeagueInfo, Game9Section, Game9Data,};
 use log::{info, debug, error};
 
 mod common;
@@ -27,19 +27,7 @@ fn load_week ( ) {
                         info!("loaded week 1 for year 0 ({}) in league {}", year, LEAGUE_NAME);
                         debug!("there are {} games in the week", week.games.len());
                         for game in week.games.iter() {
-                            for section in game.sections.iter() {
-                                match section {
-                                    Game9Section::Start {..} => {
-                                        debug!("starting game: {}", section);
-                                    },
-                                    Game9Section::Play {quarter, minutes_remaining, seconds_remaining, down, yards_to_go, yardline, play, ..} => {
-                                        debug!("{}-{}-{} ({}Q: {}:{:02}), {}", down, yards_to_go, game.field_yardline(*yardline), quarter, minutes_remaining, seconds_remaining, play);
-                                    },
-                                    Game9Section::End {..} => {
-                                        debug!("ending game");
-                                    },
-                                }
-                            }
+                            show_game(game);
                         }
                     } else {
                         error!("unable to load week 1 for year 0 ({}) in league {}", year, LEAGUE_NAME);
@@ -87,20 +75,7 @@ fn load_all_weeks ( ) {
                         info!("loaded week {} for year 0 ({}) in league {}", week_num, year, league_name);
                         debug!("there are {} games in the week", week.games.len());
                         for game in week.games.iter() {
-                            for section in game.sections.iter() {
-                                match section {
-                                    Game9Section::Start {..} => {
-                                        debug!("starting game: {}", section);
-                                    },
-                                    Game9Section::Play {quarter, minutes_remaining, seconds_remaining, down, yards_to_go, yardline, play, ..} => {
-                                        debug!("{}-{}-{} ({}Q: {}:{:02}), {}", down, yards_to_go, game.field_yardline(*yardline), quarter, minutes_remaining, seconds_remaining, play);
-                                    },
-                                    Game9Section::End {..} => {
-                                        debug!("ending game");
-                                        // break
-                                    },
-                                }
-                            }
+                            show_game(game);
                         }
                     } else {
                         error!("unable to load week {} for year 0 ({}) in league {}", week_num, year, league_name);
@@ -118,4 +93,21 @@ fn load_all_weeks ( ) {
     }
 
     assert!(done);
+}
+
+fn show_game ( game: &Game9Data ) {
+    for section in game.sections.iter() {
+        match section {
+            Game9Section::Start {..} => {
+                debug!("starting game: {}", section);
+            },
+            Game9Section::Play {quarter, minutes_remaining, seconds_remaining, down, yards_to_go, yardline, off_team, play, ..} => {
+                debug!("{}-{}-{} ({}Q: {}:{:02}), {} {}", down, yards_to_go, game.field_yardline(*yardline), quarter, minutes_remaining, seconds_remaining, game.team(*off_team).short(), play);
+            },
+            Game9Section::End {..} => {
+                debug!("ending game");
+            },
+        }
+    }
+
 }

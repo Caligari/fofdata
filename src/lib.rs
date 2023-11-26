@@ -12,7 +12,7 @@ mod fof9_utility;
 mod fof9_leaguedata;
 mod fof9_weekdata;
 pub use fof9_leaguedata::League9Data;
-pub use fof9_weekdata::{Week9Data, Game9Section, GamePlay9};
+pub use fof9_weekdata::{Week9Data, Game9Section, GamePlay9, Game9Data};
 
 pub const LEAGUES_9_PATH: &str = "Solecismic Software\\Front Office Football Nine\\saved_games";
 pub const LEAGUEINFO_9_FILENAME: &str = "league.dat";
