@@ -171,14 +171,14 @@ pub enum GamePlay9 {
     },
 
     #[br(magic = 5u32)] Run {
-        offensive_formation: OffensiveFormation9,
-        offensive_personnel: OffensivePersonnel9,
-        #[br(count = 419)]
+        formation: FormationData9,
+        #[br(count = 414)]
         data: Vec<u32>
     },
 
     #[br(magic = 6u32)] Pass {
-        #[br(count = 421)]
+        formation: FormationData9,
+        #[br(count = 414)]
         data: Vec<u32>
     },
 
@@ -218,12 +218,12 @@ impl Display for GamePlay9 {
                 write!(f, "Punt")
             },
 
-            GamePlay9::Run { .. } => {
-                write!(f, "Run")
+            GamePlay9::Run { formation, .. } => {
+                write!(f, "Run ({})", formation)
             },
 
-            GamePlay9::Pass { .. } => {
-                write!(f, "Pass")
+            GamePlay9::Pass { formation, .. } => {
+                write!(f, "Pass ({})", formation)
             },
 
             GamePlay9::Special { specialplay, extra_point, .. } => {
@@ -234,6 +234,27 @@ impl Display for GamePlay9 {
                 }
             },
         }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub struct FormationData9 {
+    offensive_formation: OffensiveFormation9,
+    offensive_personnel: OffensivePersonnel9,
+    defensive_alignment: DefensiveSpy9,
+    defensive_personnel: DefensivePersonnel9,
+    defensive_coverage: DefensiveCoverage9,
+    defensive_front: DefensiveFront9,
+    defensive_special: SpecialCoverage9,
+}
+
+impl Display for FormationData9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {} | {} {} {} {} {}",
+            self.offensive_formation, self.offensive_personnel,
+            self.defensive_front, self.defensive_personnel, self.defensive_coverage, self.defensive_alignment, self.defensive_special,
+        )
     }
 }
 
@@ -515,6 +536,146 @@ impl Display for OffensiveFormation9 {
             OffensiveFormation9::Strong => "Strong",
             OffensiveFormation9::IForm => "I",
             OffensiveFormation9::Empty => "Empty Backfield",
+        })
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub enum DefensiveSpy9 {
+	#[br(magic = 0u32)] None,
+	#[br(magic = 1u32)] Spy,
+}
+
+impl Display for DefensiveSpy9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            DefensiveSpy9::None => "",
+            DefensiveSpy9::Spy => "Spy",
+        })
+    }
+}
+
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub enum DefensivePersonnel9 {
+	#[br(magic = 0u32)] Normal,
+	#[br(magic = 1u32)] Nickel,
+	#[br(magic = 2u32)] Dime,
+	#[br(magic = 3u32)] Prevent,
+	#[br(magic = 4u32)] GoalLine,
+}
+
+impl Display for DefensivePersonnel9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            DefensivePersonnel9::Normal => "Man to Man",
+            DefensivePersonnel9::Nickel => "Nickel",
+            DefensivePersonnel9::Dime => "Dime",
+            DefensivePersonnel9::Prevent => "Prevent",
+            DefensivePersonnel9::GoalLine => "GoalLine",
+        })
+    }
+}
+
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub enum DefensiveCoverage9 {
+	#[br(magic = 0u32)] Zero,
+	#[br(magic = 1u32)] One,
+	#[br(magic = 2u32)] Two,
+	#[br(magic = 3u32)] Three,
+	#[br(magic = 4u32)] Four,
+	#[br(magic = 5u32)] Five,
+	#[br(magic = 6u32)] Six,
+	#[br(magic = 7u32)] Seven,
+	#[br(magic = 8u32)] Eight,
+	#[br(magic = 9u32)] Nine,
+	#[br(magic = 10u32)] Ten,
+	#[br(magic = 11u32)] Eleven,
+	#[br(magic = 12u32)] Twelve,
+	#[br(magic = 13u32)] Thirteen,
+	#[br(magic = 14u32)] Fourteen,
+	#[br(magic = 15u32)] Fifteen,
+}
+
+impl Display for DefensiveCoverage9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            DefensiveCoverage9::Zero => "Cover 0 Press",
+            DefensiveCoverage9::One => "Cover 0",
+            DefensiveCoverage9::Two => "Cover 1 Press",
+            DefensiveCoverage9::Three => "Cover 1",
+            DefensiveCoverage9::Four => "Cover 1 Hole/Press",
+            DefensiveCoverage9::Five => "Cover 2 Zone",
+            DefensiveCoverage9::Six => "Cover 2 Press",
+            DefensiveCoverage9::Seven => "Cover 2",
+            DefensiveCoverage9::Eight => "Tampa 2 Zone",
+            DefensiveCoverage9::Nine => "Cover 3 Sky Zone",
+            DefensiveCoverage9::Ten => "Cover 3 Cloud Zone",
+            DefensiveCoverage9::Eleven => "Cover 3 Buzz Zone",
+            DefensiveCoverage9::Twelve => "Cover 4 Zone",
+            DefensiveCoverage9::Thirteen => "Cover 4 Match Press",
+            DefensiveCoverage9::Fourteen => "Cover 4 Match",
+            DefensiveCoverage9::Fifteen => "Cover 6 Zone",
+        })
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub enum DefensiveFront9 {
+	#[br(magic = 0u32)] True34,
+	#[br(magic = 1u32)] Eagle34,
+	#[br(magic = 2u32)] Under43,
+	#[br(magic = 3u32)] Over43,
+}
+
+impl Display for DefensiveFront9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            DefensiveFront9::True34 => "True 34",
+            DefensiveFront9::Eagle34 => "Eagle 34",
+            DefensiveFront9::Under43 => "43 Under",
+            DefensiveFront9::Over43 => "43 Over",
+        })
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub enum SpecialCoverage9 {
+	#[br(magic = 0u32)] ManNone,
+	#[br(magic = 1u32)] NickleNone,
+	#[br(magic = 10u32)] What10,
+	#[br(magic = 11u32)] What11,
+    #[br(magic = 20u32)] What20,
+    #[br(magic = 21u32)] What21,
+    #[br(magic = 30u32)] What30,
+    #[br(magic = 31u32)] What31,
+    #[br(magic = 40u32)] What40,
+    #[br(magic = 41u32)] What41,
+    #[br(magic = 50u32)] What50,
+    #[br(magic = 51u32)] What51,
+}
+
+impl Display for SpecialCoverage9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            SpecialCoverage9::ManNone => "",
+            SpecialCoverage9::NickleNone => "",
+            SpecialCoverage9::What10 => "DoubleTop/10",
+            SpecialCoverage9::What11 => "DoubleSecond/11",
+            SpecialCoverage9::What20 => "DoubleTop/20",
+            SpecialCoverage9::What21 => "DoubleSecond/21?",
+            SpecialCoverage9::What30 => "DoubleTop/30",
+            SpecialCoverage9::What31 => "DoubleSecond/31?",
+            SpecialCoverage9::What40 => "DoubleTop/40",
+            SpecialCoverage9::What41 => "DoubleSecond/41?",
+            SpecialCoverage9::What50 => "DoubleTop/50",
+            SpecialCoverage9::What51 => "DoubleSecond/51",
         })
     }
 }

@@ -70,23 +70,21 @@ fn load_all_weeks ( ) {
     common::setup_logger(module_path!()).expect("log did not start");
     info!("Starting");
 
-    // const LEAGUE_NAME: &str = "New_Trial";
-    const LEAGUE_NAME: &str = "Try_2";
     const YEAR_SELECTION: usize = 0;
 
     let mut done = true;
 
     let mut league_info = fofdata::find_leagues_9();
 
-    if let Some(league) = league_info.get_mut(LEAGUE_NAME) {
-        info!("processing league: {}", LEAGUE_NAME);
+    for (league_name, league) in league_info.iter_mut() {
+        info!("processing league: {}", league_name);
         league.load_league_data();
 
         if let Some(year) = league.get_year(YEAR_SELECTION) {
             if let Some(weeks_list) = league.get_weeks_list_for_year(year) {
                 for week_num in weeks_list {
                     if let Some(week) = league.get_week(year, week_num) {
-                        info!("loaded week {} for year 0 ({}) in league {}", week_num, year, LEAGUE_NAME);
+                        info!("loaded week {} for year 0 ({}) in league {}", week_num, year, league_name);
                         debug!("there are {} games in the week", week.games.len());
                         for game in week.games.iter() {
                             for section in game.sections.iter() {
@@ -105,21 +103,18 @@ fn load_all_weeks ( ) {
                             }
                         }
                     } else {
-                        error!("unable to load week {} for year 0 ({}) in league {}", week_num, year, LEAGUE_NAME);
+                        error!("unable to load week {} for year 0 ({}) in league {}", week_num, year, league_name);
                         done = false;
                     }
                 }
             } else {
-                error!("unable to find weeks in year 0 ({}) in league {}", year, LEAGUE_NAME);
+                error!("unable to find weeks in year 0 ({}) in league {}", year, league_name);
                 done = false;
             }
         } else {
-            error!("unable to find year 0 in league {}", LEAGUE_NAME);
+            error!("unable to find year 0 in league {}", league_name);
             done = false;
         }
-    } else {
-        error!("unable to find league {}", LEAGUE_NAME);
-        done = false;
     }
 
     assert!(done);
