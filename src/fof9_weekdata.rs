@@ -2,7 +2,9 @@ use std::fmt::Display;
 use num_traits::FromPrimitive;
 use binrw::{BinRead, helpers::{until_eof, until}, binread};
 
-use crate::fof9_utility::FixedString;
+use crate::{fof9_utility::FixedString, Position};
+
+const NUM_BLITZERS: usize = 10;
 
 
 #[allow(dead_code)]
@@ -179,7 +181,7 @@ pub enum GamePlay9 {
 
         // #[br(temp)]
         num_blitz: u32,
-        #[br(count = 10)]  // temp
+        #[br(count = NUM_BLITZERS)]  // temp
         def_assign: Vec<DefensiveAssignment9>,
 
         #[br(calc = def_assign.iter().enumerate().filter_map(|(pos, assign)| if matches!(assign, DefensiveAssignment9::Blitz) { Some(pos) } else { None }).collect())]
@@ -202,7 +204,7 @@ pub enum GamePlay9 {
 
         // #[br(temp)]
         num_blitz: u32,
-        #[br(count = 10)]  // temp
+        #[br(count = NUM_BLITZERS)]  // temp
         def_assign: Vec<DefensiveAssignment9>,
 
         #[br(calc = def_assign.iter().enumerate().filter_map(|(pos, assign)| if matches!(assign, DefensiveAssignment9::Blitz) { Some(pos) } else { None }).collect())]
@@ -254,11 +256,33 @@ impl Display for GamePlay9 {
             },
 
             GamePlay9::Run { formation, defensive_blitzers, defensive_spies, .. } => {
-                write!(f, "Run ({} - {}:{:?}, {:?})", formation, defensive_blitzers.len(), &defensive_blitzers, &defensive_spies)
+                write!(f, "Run ({}{}{})", formation,
+                    if defensive_spies.is_empty() { "".to_string() } else {
+                        format!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
+                    },
+                    if defensive_blitzers.is_empty() { "".to_string() } else {
+                        let first = format!(", Blitz:{}", formation.blitz_position(*defensive_blitzers.first().unwrap())).to_string();
+                        let ret = if defensive_blitzers.len() > 1 {
+                            defensive_blitzers[1..].iter().fold(first, |acc, next| acc + "," + &formation.blitz_position(*next))
+                        } else { first };
+                        ret
+                    },
+                )
             },
 
             GamePlay9::Pass { formation, defensive_blitzers, defensive_spies, .. } => {
-                write!(f, "Pass ({} - {}:{:?}, {:?})", formation, defensive_blitzers.len(), &defensive_blitzers, &defensive_spies)
+                write!(f, "Pass ({}{}{})", formation,
+                    if defensive_spies.is_empty() { "".to_string() } else {
+                        format!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
+                    },
+                    if defensive_blitzers.is_empty() { "".to_string() } else {
+                        let first = format!(", Blitz:{}", formation.blitz_position(*defensive_blitzers.first().unwrap())).to_string();
+                        let ret = if defensive_blitzers.len() > 1 {
+                            defensive_blitzers[1..].iter().fold(first, |acc, next| acc + "," + &formation.blitz_position(*next))
+                        } else { first };
+                        ret
+                    },
+                )
             },
 
             GamePlay9::Special { specialplay, extra_point, .. } => {
@@ -284,11 +308,35 @@ pub struct FormationData9 {
     defensive_special: SpecialCoverage9,
 }
 
+impl FormationData9 {
+    fn blitz_position ( &self, blitzer_number: usize ) -> String {
+        use DefensiveFront9::*;
+        use DefensivePersonnel9::*;
+        use Position::*;
+
+        let blitzer_number = blitzer_number.min(NUM_BLITZERS-1) - 1;
+
+        if let Some(list) = match (self.defensive_front, self.defensive_personnel) {
+            (True34 | Eagle34, Man) => Some([DRE, SLB, SILB, WILB, WLB, LCB, RCB, SS, FS]),
+            (True34 | Eagle34, Nickel) => Some([DRE, SLB, SILB, WLB, LCB, RCB, NB, SS, FS]),
+            (True34 | Eagle34, Dime) => Some([DRE, SLB, WLB, LCB, RCB, NB, DB, SS, FS]),
+
+            (Over43 | Under43, Man) => Some([DLE, DRE, SLB, MLB, WLB, LCB, RCB, SS, FS]),
+            (Over43 | Under43, Nickel) => Some([DLE, DRE, MLB, WLB, LCB, RCB, NB, SS, FS]),
+            (Over43 | Under43, Dime) => Some([DLE, DRE, MLB, LCB, RCB, NB, DB, SS, FS]),
+
+            _ => None,
+        } {
+            format!("{:?}", list[blitzer_number])
+        } else { blitzer_number.to_string() }
+    }
+}
+
 impl Display for FormationData9 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {} | {} {} {} {}",
+        write!(f, "{} {} | {} {} {}", // {}",
             self.offensive_formation, self.offensive_personnel,
-            self.defensive_front, self.defensive_personnel, self.defensive_coverage, self.defensive_special,
+            self.defensive_front, self.defensive_personnel, self.defensive_coverage, // self.defensive_special,
         )
     }
 }
@@ -576,7 +624,7 @@ impl Display for OffensiveFormation9 {
 }
 
 #[allow(dead_code)]
-#[derive(BinRead, Debug)]
+#[derive(BinRead, Debug, Clone, Copy)]
 pub enum DefensivePersonnel9 {
 	#[br(magic = 0u32)] Man,
 	#[br(magic = 1u32)] Nickel,
@@ -643,7 +691,7 @@ impl Display for DefensiveCoverage9 {
 }
 
 #[allow(dead_code)]
-#[derive(BinRead, Debug)]
+#[derive(BinRead, Debug, Clone, Copy)]
 pub enum DefensiveFront9 {
 	#[br(magic = 0u32)] True34,
 	#[br(magic = 1u32)] Eagle34,
@@ -708,7 +756,7 @@ impl Display for SpecialCoverage9 {
 
 #[allow(dead_code)]
 #[derive(BinRead, Debug)]
-enum DefensiveAssignment9 {
+pub enum DefensiveAssignment9 {
     #[br(magic = 0u32)] Normal,
     #[br(magic = 1u32)] Blitz,
     #[br(magic = 2u32)] Spy,

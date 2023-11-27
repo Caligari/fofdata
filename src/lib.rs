@@ -214,6 +214,45 @@ impl LeagueInfo for League9FileInfo {
 }
 
 
+#[derive(Debug)]
+pub enum Position {
+    QB,
+    RB,
+    FB,
+    TE,
+    FL,
+    SE,
+    WR,
+    C,
+    RG,
+    LG,
+    RT,
+    LT,
+    P,
+    K,
+    DLE,
+    DRE,
+    DLT,
+    DRT,
+    DT,
+    UT,
+    NT,
+    SILB,
+    WILB,
+    MLB,
+    SLB,
+    WLB,
+    RCB,
+    LCB,
+    NB,
+    DB,
+    SS,
+    FS,
+    LS,
+    PR,
+    KR,
+}
+
 #[cfg(test)]
 mod tests {
     use crate::LeagueInfo;
