@@ -192,7 +192,9 @@ pub enum GamePlay9 {
         #[br(assert(num_blitz == u32::from_usize(defensive_blitzers.len()).unwrap()))]
         #[br(assert(formation.defensive_special.has_spy() == (defensive_spies.len() == 1)))]
 
-        #[br(count = 402)]
+        penalty_info: PenaltyInfo9,
+
+        #[br(count = 382)]
         data: Vec<u32>
     },
 
@@ -215,7 +217,9 @@ pub enum GamePlay9 {
         #[br(assert(num_blitz == u32::from_usize(defensive_blitzers.len()).unwrap()))]
         #[br(assert(formation.defensive_special.has_spy() == (defensive_spies.len() == 1)))]
 
-        #[br(count = 402)]
+        penalty_info: PenaltyInfo9,
+
+        #[br(count = 382)]
         data: Vec<u32>
     },
 
@@ -255,34 +259,12 @@ impl Display for GamePlay9 {
                 write!(f, "Punt")
             },
 
-            GamePlay9::Run { formation, defensive_blitzers, defensive_spies, .. } => {
-                write!(f, "Run ({}{}{})", formation,
-                    if defensive_spies.is_empty() { "".to_string() } else {
-                        format!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
-                    },
-                    if defensive_blitzers.is_empty() { "".to_string() } else {
-                        let first = format!(", Blitz:{}", formation.blitz_position(*defensive_blitzers.first().unwrap())).to_string();
-                        let ret = if defensive_blitzers.len() > 1 {
-                            defensive_blitzers[1..].iter().fold(first, |acc, next| acc + "," + &formation.blitz_position(*next))
-                        } else { first };
-                        ret
-                    },
-                )
+            GamePlay9::Run { formation, defensive_blitzers, defensive_spies, penalty_info, data, .. } => {
+                write!(f, "{}", display_play_common("Run", formation, defensive_blitzers, defensive_spies, penalty_info, data))
             },
 
-            GamePlay9::Pass { formation, defensive_blitzers, defensive_spies, .. } => {
-                write!(f, "Pass ({}{}{})", formation,
-                    if defensive_spies.is_empty() { "".to_string() } else {
-                        format!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
-                    },
-                    if defensive_blitzers.is_empty() { "".to_string() } else {
-                        let first = format!(", Blitz:{}", formation.blitz_position(*defensive_blitzers.first().unwrap())).to_string();
-                        let ret = if defensive_blitzers.len() > 1 {
-                            defensive_blitzers[1..].iter().fold(first, |acc, next| acc + "," + &formation.blitz_position(*next))
-                        } else { first };
-                        ret
-                    },
-                )
+            GamePlay9::Pass { formation, defensive_blitzers, defensive_spies, penalty_info, data, .. } => {
+                write!(f, "{}", display_play_common("Pass", formation, defensive_blitzers, defensive_spies, penalty_info, data))
             },
 
             GamePlay9::Special { specialplay, extra_point, .. } => {
@@ -294,6 +276,24 @@ impl Display for GamePlay9 {
             },
         }
     }
+}
+
+fn display_play_common ( play_type: &str, formation: &FormationData9, defensive_blitzers: &Vec<usize>, defensive_spies: &Vec<usize>, penalty: &PenaltyInfo9, data: &[u32] ) -> String {
+    format!("{} ({}{}{}{}){}", play_type,
+        formation,
+        if defensive_spies.is_empty() { "".to_string() } else {
+            format!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
+        },
+        if defensive_blitzers.is_empty() { "".to_string() } else {
+            let first = format!(", Blitz:{}", formation.blitz_position(*defensive_blitzers.first().unwrap())).to_string();
+            let ret = if defensive_blitzers.len() > 1 {
+                defensive_blitzers[1..].iter().fold(first, |acc, next| acc + "," + &formation.blitz_position(*next))
+            } else { first };
+            ret
+        },
+        penalty,
+        if penalty.is_penalty() { format!(" {:?}", &data[0..8]) } else { "".to_string() },
+    )
 }
 
 #[allow(dead_code)]
@@ -338,6 +338,65 @@ impl Display for FormationData9 {
             self.offensive_formation, self.offensive_personnel,
             self.defensive_front, self.defensive_personnel, self.defensive_coverage, // self.defensive_special,
         )
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub struct PenaltyInfo9 {
+    #[br(map = |val: u32| { assert!(val < 2); val == 1})]
+    defensive_penalty: bool,
+    #[br(map = |val: u32| { assert!(val < 2); val == 1})]
+    offensive_penalty: bool,
+
+    penalty_yards: u32,
+
+    #[br(map = |val: u32| { assert!(val < 2); val == 1})]
+    kicking_play: bool,  // ??
+
+    #[br(map = |val: u32| { assert!(val < 2); val == 1})]
+    loss_of_down: bool,  // verify
+
+    #[br(count = 4)]
+    something: Vec<u32>,
+
+    accept_yardline: u32,
+    accept_down: u32,
+    accept_yards_to_go: u32,
+
+    decline_yardline: u32,
+    decline_down: u32,
+    decline_yards_to_go: u32,
+
+    #[br(count = 4)]
+    something2: Vec<u32>,
+
+    penalty_type: u32,  // (1 = false start, 7 = off pass interference?)
+}
+
+impl PenaltyInfo9 {
+    pub fn is_penalty ( &self ) -> bool {
+        self.defensive_penalty || self.offensive_penalty
+    }
+}
+
+impl Display for PenaltyInfo9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.is_penalty() {
+            write!(f, ", {} {} yards{}{}",
+                match (self.defensive_penalty, self.offensive_penalty) {
+                    (true, false) => "def pen",
+                    (false, true) => "off pen",
+                    (true, true) => "off/def pen",
+                    _ => unreachable!(),
+                },
+                self.penalty_yards,
+                if self.loss_of_down { " and down" } else { "" },
+                if self.kicking_play { " kick/punt" } else { "" },
+            )
+        } else {
+            write!(f, "")
+        }
     }
 }
 
