@@ -192,10 +192,15 @@ pub enum GamePlay9 {
         #[br(assert(num_blitz == u32::from_usize(defensive_blitzers.len()).unwrap()))]
         #[br(assert(formation.defensive_special.has_spy() == (defensive_spies.len() == 1)))]
 
-        penalty_info: PenaltyInfo9,
+        penalty: PenaltyInfo9,
 
-        #[br(count = 382)]
-        data: Vec<u32>
+        #[br(count = 7)]
+        unknown: Vec<u32>,
+
+        injury: InjuryInfo9,
+
+        #[br(count = 373)]
+        data: Vec<u32>,  // minutes left, seconds left, penalty player (on field?)
     },
 
     #[br(magic = 6u32)] Pass {
@@ -217,9 +222,14 @@ pub enum GamePlay9 {
         #[br(assert(num_blitz == u32::from_usize(defensive_blitzers.len()).unwrap()))]
         #[br(assert(formation.defensive_special.has_spy() == (defensive_spies.len() == 1)))]
 
-        penalty_info: PenaltyInfo9,
+        penalty: PenaltyInfo9,
 
-        #[br(count = 382)]
+        #[br(count = 7)]
+        unknown: Vec<u32>,
+
+        injury: InjuryInfo9,
+
+        #[br(count = 373)]
         data: Vec<u32>
     },
 
@@ -259,12 +269,12 @@ impl Display for GamePlay9 {
                 write!(f, "Punt")
             },
 
-            GamePlay9::Run { formation, defensive_blitzers, defensive_spies, penalty_info, data, .. } => {
-                write!(f, "{}", display_play_common("Run", formation, defensive_blitzers, defensive_spies, penalty_info, data))
+            GamePlay9::Run { formation, defensive_blitzers, defensive_spies, penalty, injury, data, .. } => {
+                write!(f, "{}", display_play_common("Run", formation, defensive_blitzers, defensive_spies, penalty, injury, data))
             },
 
-            GamePlay9::Pass { formation, defensive_blitzers, defensive_spies, penalty_info, data, .. } => {
-                write!(f, "{}", display_play_common("Pass", formation, defensive_blitzers, defensive_spies, penalty_info, data))
+            GamePlay9::Pass { formation, defensive_blitzers, defensive_spies, penalty, injury, data, .. } => {
+                write!(f, "{}", display_play_common("Pass", formation, defensive_blitzers, defensive_spies, penalty, injury, data))
             },
 
             GamePlay9::Special { specialplay, extra_point, .. } => {
@@ -278,8 +288,8 @@ impl Display for GamePlay9 {
     }
 }
 
-fn display_play_common ( play_type: &str, formation: &FormationData9, defensive_blitzers: &Vec<usize>, defensive_spies: &Vec<usize>, penalty: &PenaltyInfo9, data: &[u32] ) -> String {
-    format!("{} ({}{}{}{}){}", play_type,
+fn display_play_common ( play_type: &str, formation: &FormationData9, defensive_blitzers: &Vec<usize>, defensive_spies: &Vec<usize>, penalty: &PenaltyInfo9, injury: &InjuryInfo9, data: &[u32] ) -> String {
+    format!("{} ({}{}{}{}{}){}", play_type,
         formation,
         if defensive_spies.is_empty() { "".to_string() } else {
             format!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
@@ -292,7 +302,8 @@ fn display_play_common ( play_type: &str, formation: &FormationData9, defensive_
             ret
         },
         penalty,
-        if penalty.is_penalty() { format!(" {:?}", &data[0..8]) } else { "".to_string() },
+        injury,
+        format!(" {:?}", &data[0..7]),
     )
 }
 
@@ -383,19 +394,37 @@ impl PenaltyInfo9 {
 impl Display for PenaltyInfo9 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.is_penalty() {
-            write!(f, ", {} {} yards{}{}",
+            write!(f, ", {}[{}] => {}-{}/{}",
                 match (self.defensive_penalty, self.offensive_penalty) {
                     (true, false) => "def pen",
                     (false, true) => "off pen",
                     (true, true) => "off/def pen",
                     _ => unreachable!(),
                 },
-                self.penalty_yards,
-                if self.loss_of_down { " and down" } else { "" },
-                if self.kicking_play { " kick/punt" } else { "" },
+                self.penalty_type,
+                self.accept_down,
+                self.accept_yards_to_go,
+                self.accept_yardline,
             )
         } else {
             write!(f, "")
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(BinRead, Debug)]
+pub struct InjuryInfo9 {
+    injury: u32,
+    player: u32,
+}
+
+impl Display for InjuryInfo9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if self.injury == 0 && self.player == 0 {
+            write!(f, "")
+        } else {
+            write!(f, " injury {}/{}", self.player, self.injury)
         }
     }
 }
