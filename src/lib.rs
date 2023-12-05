@@ -1,5 +1,6 @@
 use std::{path::{PathBuf, Path}, collections::BTreeMap, fs::{self, File}, io::BufReader};
 use directories::BaseDirs;
+use fof9_playerdata::Players9Data;
 use log::{info, warn, debug, error};
 use multimap::MultiMap;
 use walkdir::WalkDir;
@@ -11,6 +12,7 @@ use num_traits::FromPrimitive;
 mod fof9_utility;
 mod fof9_leaguedata;
 mod fof9_weekdata;
+mod fof9_playerdata;
 pub use fof9_leaguedata::League9Data;
 pub use fof9_weekdata::{Week9Data, Game9Section, GamePlay9, Game9Data};
 
@@ -64,6 +66,7 @@ pub trait LeagueInfo {
     // may not need path
     fn get_week_path ( &self, year: u16, week: u8 ) -> PathBuf;
     fn get_week_file ( &self, year: u16, week: u8 ) -> BufReader<File>;  // TODO: could we digest it and pass that?
+    fn get_players_file ( &self ) -> BufReader<File>;  // TODO: could we digest it and pass that?
 
     fn get_weeks_list_for_year ( &self, year: u16 ) -> Option<Vec<u8>> {
         if let Some(week_index) = &self.get_week_index() {
@@ -104,7 +107,6 @@ pub trait LeagueInfo {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct League9FileInfo {
     pub name: String,
@@ -113,7 +115,6 @@ pub struct League9FileInfo {
     pub week_index: Option<MultiMap<u16, u8>>,  // year, week
 }
 
-#[allow(dead_code)]
 impl League9FileInfo {
     pub fn get_week ( &self, year: u16, week: u8 ) -> Option<Week9Data> {
         let mut file = self.get_week_file(year, week);
@@ -125,6 +126,21 @@ impl League9FileInfo {
 
             Err(err) => {
                 error!("unable to read week file: {}", err);
+                None
+            }
+        }
+    }
+
+    pub fn get_players ( &self ) -> Option<Players9Data> {
+        let mut file = self.get_players_file();
+
+        match file.read_ne() {
+            Ok(players) => {
+                Some(players)
+            },
+
+            Err(err) => {
+                error!("unable to read players file: {}", err);
                 None
             }
         }
@@ -172,6 +188,14 @@ impl LeagueInfo for League9FileInfo {
         let filepath = self.gamepath.join(&filename);
         debug!("opening game week: {}", filename);
         let file = File::open(filepath).unwrap_or_else(|_| panic!("Unable to open week file: {}", filename));
+        BufReader::new(file)
+    }
+
+    fn get_players_file ( &self ) -> BufReader<File> {
+        const PLAYERS_FILENAME: &str = "players.dat";
+        let filepath = self.gamepath.join(PLAYERS_FILENAME);
+        debug!("opening players file: {}", PLAYERS_FILENAME);
+        let file = File::open(filepath).unwrap_or_else(|_| panic!("Unable to open players file: {}", PLAYERS_FILENAME));
         BufReader::new(file)
     }
 

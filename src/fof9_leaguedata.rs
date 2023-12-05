@@ -5,11 +5,10 @@ use num_traits::FromPrimitive;
 use crate::fof9_utility::FixedString;
 
 
-#[allow(dead_code)]
 #[derive(BinRead, BinWrite, Debug)]
 #[brw(magic = b"\x0c\0\0\0STRUCTLEAGUE")]  // what is the Z? and three NULLs?
 pub struct League9Data {
-    some1: u32,  // Z?
+    data_version: u32,  // ?
     some2: u32,  // ?
     some3: u32,  // ? null
     some4: u32,  // next action?
@@ -67,7 +66,6 @@ pub struct League9Data {
     pad3: Vec<u32>,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, BinWrite, Debug)]
 pub struct ItemB {  // !! needs to be 50 u32 items
     data1:u32,
@@ -84,7 +82,6 @@ pub struct ItemB {  // !! needs to be 50 u32 items
     data12:u32,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, BinWrite, Debug)]
 pub struct CalendarItem {
     pub number: u32,
@@ -99,7 +96,6 @@ pub struct CalendarItem {
     pub some6: u32,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, BinWrite, Debug)]
 pub struct TeamInfo {
     #[bw(map = |n| n+1)]
@@ -136,7 +132,6 @@ pub struct TeamInfo {
     data4: Vec<u32>,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, BinWrite, Debug)]
 pub struct PlaybookPlayInfo {
     #[br(count = 18)]
@@ -144,7 +139,6 @@ pub struct PlaybookPlayInfo {
     pub play_name: FixedString,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, BinWrite, Debug)]
 pub struct DivisionInfo {
     pub division_name: FixedString,

@@ -5,7 +5,6 @@ use num_traits::FromPrimitive;
 use log::error;
 
 
-#[allow(dead_code)]
 #[derive(BinRead, BinWrite, PartialEq)]
 pub struct FixedString {
     #[bw(map = |_| u32::from_usize(string.len()).unwrap())]

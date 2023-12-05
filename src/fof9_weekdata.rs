@@ -7,7 +7,6 @@ use crate::{fof9_utility::FixedString, Position};
 const NUM_BLITZERS: usize = 10;
 
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct Week9Data {
     // some number of games
@@ -15,7 +14,6 @@ pub struct Week9Data {
     pub games: Vec<Game9Data>,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 #[br(assert(matches!(sections.first().unwrap(), Game9Section::Start{..})), assert(matches!(sections.last().unwrap(), Game9Section::End{..})))]
 pub struct Game9Data {
@@ -24,7 +22,6 @@ pub struct Game9Data {
     pub sections: Vec<Game9Section>,
 }
 
-#[allow(dead_code)]
 impl Game9Data {
     pub fn home_team ( &self ) -> &WeekTeamInfo9 {
         if let Game9Section::Start{home_team, ..} = self.sections.first().unwrap() {
@@ -57,12 +54,11 @@ impl Game9Data {
     }
 }
 
-#[allow(dead_code)]
 #[binread]
 #[derive(Debug)]
 pub enum Game9Section {
     #[br(magic = b"\x0a\0\0\0BEGIN_GAME")] Start {
-        version: u32,   // is this the version of the data?
+        data_version: u32,   // is this the version of the data?
         year: u32,
         current_week: u32,
         exhibition_weeks: u32,
@@ -149,7 +145,6 @@ impl Display for Game9Section {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 #[binread]
 pub enum GamePlay9 {
@@ -307,7 +302,6 @@ fn display_play_common ( play_type: &str, formation: &FormationData9, defensive_
     )
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct FormationData9 {
     offensive_formation: OffensiveFormation9,
@@ -352,7 +346,6 @@ impl Display for FormationData9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct PenaltyInfo9 {
     #[br(map = |val: u32| { assert!(val < 2); val == 1})]
@@ -412,7 +405,6 @@ impl Display for PenaltyInfo9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct InjuryInfo9 {
     injury: u32,
@@ -429,7 +421,6 @@ impl Display for InjuryInfo9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum SpecialPlay9 {
     #[br(magic = 0u32)] ExtraPoint,
@@ -524,7 +515,6 @@ impl Display for SpecialPlay9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum ExtraPointResult9 {
     // #[br(magic = b"\x01\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0")] MissedKick,
@@ -560,7 +550,6 @@ impl Display for ExtraPointResult9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct WeekTeamInfo9 {
     number: u32,
@@ -586,7 +575,6 @@ impl WeekTeamInfo9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct DriveInfo9 {
     start_quarter: u32,
@@ -601,7 +589,6 @@ pub struct DriveInfo9 {
 	result: u32,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct PassStats9 {
     screen: PassPlayStats9,
@@ -611,7 +598,6 @@ pub struct PassStats9 {
     other: PassPlayStats9,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct PassPlayStats9 {
     attempts: u32,
@@ -619,7 +605,6 @@ pub struct PassPlayStats9 {
     yards: i32,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct RunStats9 {
     left: RunPlayStats9,
@@ -628,14 +613,12 @@ pub struct RunStats9 {
     none: RunPlayStats9,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct RunPlayStats9 {
     attempts: u32,
     yards: i32
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct PossessionStats9 {
     seconds: u32,
@@ -644,14 +627,12 @@ pub struct PossessionStats9 {
     red_zone_fg: u32,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub struct Attendance9 {
     attendance: u32,
     capacity: u32,
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum OffensivePersonnel9 {
 	#[br(magic = 0u32)] Op005,
@@ -689,7 +670,6 @@ impl Display for OffensivePersonnel9 {
 	}
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum OffensiveFormation9 {
 	#[br(magic = 0u32)] Pro,
@@ -711,7 +691,6 @@ impl Display for OffensiveFormation9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug, Clone, Copy)]
 pub enum DefensivePersonnel9 {
 	#[br(magic = 0u32)] Man,
@@ -734,7 +713,6 @@ impl Display for DefensivePersonnel9 {
 }
 
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum DefensiveCoverage9 {
 	#[br(magic = 0u32)] Zero,
@@ -778,7 +756,6 @@ impl Display for DefensiveCoverage9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug, Clone, Copy)]
 pub enum DefensiveFront9 {
 	#[br(magic = 0u32)] True34,
@@ -798,7 +775,6 @@ impl Display for DefensiveFront9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum SpecialCoverage9 {
 	#[br(magic = 0u32)] None,
@@ -815,7 +791,6 @@ pub enum SpecialCoverage9 {
     #[br(magic = 51u32)] What51,
 }
 
-#[allow(dead_code)]
 impl SpecialCoverage9 {
     pub fn has_spy ( &self ) -> bool {
         matches!(self, SpecialCoverage9::Spy | SpecialCoverage9::What11 | SpecialCoverage9::What21 | SpecialCoverage9::What31 |
@@ -842,7 +817,6 @@ impl Display for SpecialCoverage9 {
     }
 }
 
-#[allow(dead_code)]
 #[derive(BinRead, Debug)]
 pub enum DefensiveAssignment9 {
     #[br(magic = 0u32)] Normal,
