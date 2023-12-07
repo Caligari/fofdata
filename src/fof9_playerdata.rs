@@ -6,11 +6,107 @@ use crate::fof9_utility::FixedString;
 #[binread]
 #[derive(Debug)]
 #[br(magic = b"\x0c\0\0\0STRUCTPLAYER")]
+pub struct AltPlayers9Header {
+    data_version: u32,
+    max_player_id: u32,
+}
+
+impl AltPlayers9Header {
+    pub fn max_player_id ( &self ) -> u32 {
+        self.max_player_id
+    }
+}
+
+#[derive(BinRead, Debug)]
+pub struct AltPlayer9Id {
+    player_id: u32,
+}
+
+impl AltPlayer9Id {
+    pub fn player_id ( &self ) -> u32 {
+        self.player_id
+    }
+}
+
+#[binread]
+#[derive(Debug)]
+pub struct AltPlayer9Data {
+    firstname: FixedString,
+    middlename: FixedString,
+    lastname: FixedString,
+    position: PlayerPosition9,
+    position_group: PlayerPositionGroup9,
+
+    #[br(temp)]
+    _some_1: u32,
+
+    years_experience: u32,
+
+    #[br(temp, count = 152)]
+    _data_1: Vec<u32>,
+
+    #[br(temp)]
+    some1_count: u32,
+    #[br(temp, count = some1_count)]
+    _some1: Vec<SomeData2>,
+
+    #[br(temp)]
+    some2_count: u32,
+    #[br(temp, count = some2_count)]
+    _some2: Vec<SomeData3>,
+
+    #[br(temp)]
+    some3_count: u32,
+    #[br(temp, count = some3_count)]
+    _some3: Vec<SomeData3>,
+
+    #[br(temp)]
+    some4_count: u32,
+    #[br(temp, count = some4_count)]
+    _some4: Vec<SomeData3>,
+
+    #[br(temp)]
+    some5_count: u32,
+    #[br(temp, count = some5_count)]
+    _some5: Vec<SomeData3>,
+
+    #[br(temp)]
+    past_count: u32,
+    #[br(temp, count = past_count)]
+    _something_1: Vec<SomeData>,
+
+    #[br(temp)]
+    current_count: u32,
+    #[br(temp, count = current_count)]
+    _something_2: Vec<SomeData>,
+
+    #[br(temp, count = 3)]
+    _what: Vec<u32>,
+
+    #[br(temp, count = 3)]
+    _overall: Vec<RelativeStats9>,
+
+    #[br(temp, count = 101)]
+    _data_3: Vec<u32>,  // including the 7701 entries
+
+    #[br(temp, count = 52)]
+    _data_4: Vec<u32>,  // starts with year?
+}
+
+impl AltPlayer9Data {
+    pub fn position_group ( &self ) -> PlayerPositionGroup9 {
+        self.position_group
+    }
+}
+
+#[binread]
+#[derive(Debug)]
+#[br(magic = b"\x0c\0\0\0STRUCTPLAYER")]
 pub struct Players9Data {
     data_version: u32,
 
     #[br(temp)]
-    player_count: u32,
+    _player_count: u32,
     #[br(parse_with = until_exclusive(|player: &Player9Data| matches!(player.data, PresentPlayer9::Gone)))]
     players: Vec<Player9Data>,
 }
@@ -263,7 +359,7 @@ impl Display for PlayerPosition9 {
     }
 }
 
-#[derive(BinRead, Debug)]
+#[derive(BinRead, Clone, Copy, Debug)]
 pub enum PlayerPositionGroup9 {
     #[br(magic = 1u32)] QB,
     #[br(magic = 2u32)] RB,
