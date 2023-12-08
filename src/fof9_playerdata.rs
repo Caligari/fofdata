@@ -97,6 +97,14 @@ impl AltPlayer9Data {
     pub fn position_group ( &self ) -> PlayerPositionGroup9 {
         self.position_group
     }
+
+    pub fn position ( &self ) -> PlayerPosition9 {
+        self.position
+    }
+
+    pub fn name ( &self ) -> String {
+        format!("{} {}", self.firstname, self.lastname)
+    }
 }
 
 #[binread]
@@ -291,7 +299,7 @@ pub struct RelativeStats9 {
     stats: Vec<u32>,
 }
 
-#[derive(BinRead, Debug)]
+#[derive(BinRead, Clone, Copy, Debug)]
 pub enum PlayerPosition9 {
     #[br(magic = 1u32)] QB,
     #[br(magic = 2u32)] RB,

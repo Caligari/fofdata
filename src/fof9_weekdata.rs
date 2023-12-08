@@ -287,10 +287,12 @@ fn display_play_common ( play_type: &str, formation: &FormationData9, defensive_
     format!("{} ({}{}{}{}{}){}", play_type,
         formation,
         if defensive_spies.is_empty() { "".to_string() } else {
-            format!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
+            format_args!(", {} Spy", formation.blitz_position(*defensive_spies.first().unwrap())).to_string()
         },
-        if defensive_blitzers.is_empty() { "".to_string() } else {
-            let first = format!(", Blitz:{}", formation.blitz_position(*defensive_blitzers.first().unwrap())).to_string();
+        if defensive_blitzers.is_empty() {
+            "".to_string()
+        } else {
+            let first = ", Blitz:".to_string() + &formation.blitz_position(*defensive_blitzers.first().unwrap());
             let ret = if defensive_blitzers.len() > 1 {
                 defensive_blitzers[1..].iter().fold(first, |acc, next| acc + "," + &formation.blitz_position(*next))
             } else { first };
@@ -298,7 +300,7 @@ fn display_play_common ( play_type: &str, formation: &FormationData9, defensive_
         },
         penalty,
         injury,
-        format!(" {:?}", &data[0..7]),
+        format_args!(" {:?}", &data[0..7]),
     )
 }
 
