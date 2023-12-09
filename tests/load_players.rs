@@ -10,8 +10,8 @@ fn load_alt_players ( ) {
     common::setup_logger(module_path!()).expect("log did not start");
     info!("Starting");
 
-    // const LEAGUE_NAME: &str = "New_Trial";
-    const LEAGUE_NAME: &str = "Try_2";
+    const LEAGUE_NAME: &str = "New_Trial";
+    // const LEAGUE_NAME: &str = "Try_2";
 
     let mut done = true;
 
@@ -26,6 +26,7 @@ fn load_alt_players ( ) {
                 const BASE_ID: u32 = 1000;
                 let max_id = alt_header.max_player_id() + BASE_ID;
                 let mut previous_id = 0;
+                let mut count = 0;
                 while done {
                     match file.read_ne::<AltPlayer9Id>() {
                         Ok(alt_player_id) => {
@@ -36,6 +37,7 @@ fn load_alt_players ( ) {
                                 match file.read_ne::<AltPlayer9Data>() {
                                     Ok(alt_player_data) => {
                                         debug!("{}, {}", alt_player_id.player_id(), alt_player_data.position_group());
+                                        count += 1;
                                     },
 
                                     Err(err) => {
@@ -45,16 +47,31 @@ fn load_alt_players ( ) {
                                 }
 
                                 if player_id == max_id - 1 {
+                                    debug!("found last id ");
+                                    debug!("found {} players (predicted: {})", count, alt_header.max_player_id());
+
+                                    match file.read_ne::<AltPlayer9Id>() {
+                                        Ok(alt_player_id) => {
+                                            let player_id = alt_player_id.player_id();
+                                            debug!("found post player id: {}", player_id);
+                                        },
+
+                                        Err(err) => {
+                                            error!("unable to read alt post-player id from file: {}", err);
+                                            done = false;
+                                        }
+                                     }
+
                                     break
                                 }
-                            } else { break }
+                            } else { debug!("player id out of sequence"); break }
                         },
 
                         Err(err) => {
                             error!("unable to read alt player id from file: {}", err);
                             done = false;
                         }
-                     }
+                    }
                 }
             },
 
@@ -87,7 +104,7 @@ fn load_players ( ) {
         info!("processing league: {}", LEAGUE_NAME);
         if let Some(players) = league.get_players() {
             for player in players.players() {
-                debug!("{}", player);
+                // debug!("{}", player);
             }
         } else {
             error!("unable to read players for league {}", LEAGUE_NAME);

@@ -1,6 +1,5 @@
 use std::{path::{PathBuf, Path}, collections::BTreeMap, fs::{self, File}, io::BufReader};
 use directories::BaseDirs;
-use fof9_playerdata::Players9Data;
 use log::{info, warn, debug, error};
 use multimap::MultiMap;
 use walkdir::WalkDir;
@@ -15,7 +14,7 @@ mod fof9_weekdata;
 mod fof9_playerdata;
 pub use fof9_leaguedata::League9Data;
 pub use fof9_weekdata::{Week9Data, Game9Section, GamePlay9, Game9Data};
-pub use fof9_playerdata::{AltPlayers9Header, AltPlayer9Data, AltPlayer9Id};
+pub use fof9_playerdata::{AltPlayers9Header, AltPlayer9Data, AltPlayer9Id, Players9Data};
 
 pub const LEAGUES_9_PATH: &str = "Solecismic Software\\Front Office Football Nine\\saved_games";
 pub const LEAGUEINFO_9_FILENAME: &str = "league.dat";

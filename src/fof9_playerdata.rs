@@ -32,7 +32,7 @@ impl AltPlayer9Id {
 #[derive(Debug)]
 pub struct AltPlayer9Data {
     firstname: FixedString,
-    middlename: FixedString,
+    nickname: FixedString,
     lastname: FixedString,
     position: PlayerPosition9,
     position_group: PlayerPositionGroup9,
@@ -114,106 +114,55 @@ pub struct Players9Data {
     data_version: u32,
 
     #[br(temp)]
-    _player_count: u32,
-    #[br(parse_with = until_exclusive(|player: &Player9Data| matches!(player.data, PresentPlayer9::Gone)))]
+    player_count: u32,
+    // #[br(parse_with = until_exclusive(|player: &Player9Data| matches!(player.data, PresentPlayer9::Gone)))]
+    #[br(count = player_count)]
     players: Vec<Player9Data>,
+
+    #[br(dbg)]
+    next_count: u32,
+    #[br(count = next_count)]
+    next: Vec<NextData9>,
+
+    some_1: u32,
+    some_2: u32,
+    some_3: u32,
+    some_4: u32,
+
+    #[br(dbg)]
+    staff_count: u32,
+    // TODO: staff loading
 }
 
 impl Players9Data {
     pub fn players ( &self ) -> &Vec<Player9Data> {
         &self.players
     }
-}
 
-#[binread]
-#[derive(Debug)]
-pub struct Player9Data {
-    data: PresentPlayer9,
-    // #[br(dbg)]
-    // player_id: u32,
-    // firstname: FixedString,
-    // middlename: FixedString,
-    // lastname: FixedString,
-    // data: PlayerType9,
-}
-
-impl Display for Player9Data {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self.data {
-            PresentPlayer9::Gone => write!(f, ""),
-            PresentPlayer9::Present(data) => write!(f, "{}, {}{} {}", data.player_id,
-            match &data.data {
-                PlayerType9::Active(data) => format!("{}|{}, {}, ", data.position, data.position_group, data.years_experience),
-                // PlayerType9::Inactive(..)  => "".to_string(),
-            },
-            data.firstname, data.lastname)
-        }
+    pub fn max_player_id ( &self ) -> u32 {
+        self.players.len() as u32
     }
 }
 
 #[binread]
 #[derive(Debug)]
-pub enum PresentPlayer9 {
-    #[br(magic = 0u32)] Gone,
-    Present ( DataPlayer9 ),
+pub struct NextData9 {
+    #[br(count = 147)]
+    stuff: Vec<u32>
 }
 
 #[binread]
 #[derive(Debug)]
-pub struct DataPlayer9 {
-    #[br(dbg)]
+pub struct Player9Data {
+    // #[br(dbg)]
     player_id: u32,
     firstname: FixedString,
     middlename: FixedString,
     lastname: FixedString,
-    data: PlayerType9,
-}
 
-#[binread]
-#[derive(Debug)]
-pub enum PlayerType9
-{
-    // #[br(magic = 0u32)] Inactive ( InactivePlayerData9 ),
-    Active ( ActivePlayerData9 ),
-    // Gone ( GonePlayerData9 ),
-}
-
-#[binread]
-#[derive(Debug)]
-pub struct GonePlayerData9 {
-    some_year: u32,
-    #[br(count = 7)]
-    some_data: Vec<u32>,
-}
-
-#[binread]
-#[derive(Debug)]
-pub struct InactivePlayerData9 {
-    #[br(count = 41)]
-    stuff: Vec<u32>,
-
-    some_count: u32,
-    #[br(count = some_count)]
-    history: Vec<PastDat9>,
-
-    #[br(count = 10)]
-    stuff_2: Vec<u32>,
-}
-
-#[derive(BinRead, Debug)]
-pub struct PastDat9 {
-    #[br(count = 7)]
-    stuff: Vec<u32>,
-}
-
-#[binread]
-#[derive(Debug)]
-pub struct ActivePlayerData9 {
-    #[br(dbg)]
     position: PlayerPosition9,
     position_group: PlayerPositionGroup9,
     some_1: u32,
-    #[br(dbg)]
     years_experience: u32,
 
     #[br(count = 150)]
@@ -268,9 +217,67 @@ pub struct ActivePlayerData9 {
     #[br(count = 101)]
     data_3: Vec<u32>,  // including the 7701 entries
 
-    #[br(count = 52, dbg)]
+    #[br(count = 52)]
     data_4: Vec<u32>,  // starts with year?
 }
+
+impl Player9Data {
+    pub fn player_id ( &self ) -> u32 {
+        self.player_id
+    }
+
+    pub fn position_group ( &self ) -> PlayerPositionGroup9 {
+        self.position_group
+    }
+
+    pub fn position ( &self ) -> PlayerPosition9 {
+        self.position
+    }
+
+    pub fn name ( &self ) -> String {
+        format!("{} {}", self.firstname, self.lastname)
+    }
+}
+
+impl Display for Player9Data {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}, {}|{}, {}, {} {}", self.player_id,
+        self.position, self.position_group,
+        self.years_experience,
+        self.firstname, self.lastname)
+    }
+}
+
+// #[binread]
+// #[derive(Debug)]
+// pub struct GonePlayerData9 {
+//     some_year: u32,
+//     #[br(count = 7)]
+//     some_data: Vec<u32>,
+// }
+
+
+// Might be Staff??
+
+// #[binread]
+// #[derive(Debug)]
+// pub struct InactivePlayerData9 {
+//     #[br(count = 41)]
+//     stuff: Vec<u32>,
+
+//     some_count: u32,
+//     #[br(count = some_count)]
+//     history: Vec<PastDat9>,
+
+//     #[br(count = 10)]
+//     stuff_2: Vec<u32>,
+// }
+
+// #[derive(BinRead, Debug)]
+// pub struct PastDat9 {
+//     #[br(count = 7)]
+//     stuff: Vec<u32>,
+// }
 
 #[derive(BinRead, Debug)]
 pub struct SomeData {
