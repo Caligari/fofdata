@@ -1,5 +1,5 @@
 use std::fmt::Display;
-use binrw::{binread, BinRead, helpers::until_exclusive};
+use binrw::{binread, BinRead};
 
 use crate::fof9_utility::FixedString;
 
@@ -119,19 +119,35 @@ pub struct Players9Data {
     #[br(count = player_count)]
     players: Vec<Player9Data>,
 
-    #[br(dbg)]
-    next_count: u32,
-    #[br(count = next_count)]
-    next: Vec<NextData9>,
+    #[br(temp)]
+    next_1_count: u32,
+    #[br(count = next_1_count)]
+    next_1: Vec<NextData9>,
 
-    some_1: u32,
-    some_2: u32,
-    some_3: u32,
-    some_4: u32,
+    #[br(temp)]
+    next_2_count: u32,
+    #[br(count = next_2_count)]
+    next_2: Vec<NextData9>,
 
-    #[br(dbg)]
+    #[br(temp)]
+    next_3_count: u32,
+    #[br(count = next_3_count)]
+    next_3: Vec<NextData9>,
+
+    #[br(temp)]
+    next_4_count: u32,
+    #[br(count = next_4_count)]
+    next_4: Vec<NextData9>,
+
+    #[br(temp)]
+    more_1_count: u32,
+    #[br(count = more_1_count)]
+    more_1: Vec<MoreData9>,
+
+    #[br(temp)]
     staff_count: u32,
-    // TODO: staff loading
+    #[br(count = staff_count)]
+    staff: Vec<StaffData9>,
 }
 
 impl Players9Data {
@@ -142,12 +158,71 @@ impl Players9Data {
     pub fn max_player_id ( &self ) -> u32 {
         self.players.len() as u32
     }
+
+    pub fn staff ( &self ) -> &Vec<StaffData9> {
+        &self.staff
+    }
 }
 
 #[binread]
 #[derive(Debug)]
 pub struct NextData9 {
     #[br(count = 147)]
+    stuff: Vec<u32>
+}
+
+#[binread]
+#[derive(Debug)]
+pub struct MoreData9 {
+    #[br(count = 53)]
+    stuff: Vec<u32>
+}
+
+#[binread]
+#[derive(Debug)]
+pub struct StaffData9 {
+    staff_id: u32,
+    firstname: FixedString,
+    lastname: FixedString,
+
+    #[br(count = 41)]
+    stuff_1: Vec<u32>,
+
+    #[br(temp)]
+    list_count: u32,
+    #[br(count = list_count)]
+    list: Vec<StaffListItem9>,
+
+    #[br(count = 10)]
+    stuff_2: Vec<u32>,
+}
+
+impl StaffData9 {
+    pub fn staff_id ( &self ) -> u32 {
+        self.staff_id
+    }
+
+    pub fn position ( &self ) -> &str {
+        "Staff"
+    }
+
+    pub fn name ( &self ) -> String {
+        format!("{} {}", self.firstname, self.lastname)
+    }
+}
+
+impl Display for StaffData9 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}, {}, {} {}", self.staff_id,
+        self.position(),
+        self.firstname, self.lastname)
+    }
+}
+
+#[binread]
+#[derive(Debug)]
+pub struct StaffListItem9 {
+    #[br(count = 7)]
     stuff: Vec<u32>
 }
 

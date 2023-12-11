@@ -93,8 +93,8 @@ fn load_players ( ) {
     common::setup_logger(module_path!()).expect("log did not start");
     info!("Starting");
 
-    // const LEAGUE_NAME: &str = "New_Trial";
-    const LEAGUE_NAME: &str = "Try_2";
+    const LEAGUE_NAME: &str = "New_Trial";
+    // const LEAGUE_NAME: &str = "Try_2";
 
     let mut done = true;
 
@@ -103,8 +103,13 @@ fn load_players ( ) {
     if let Some(league) = league_info.get_mut(LEAGUE_NAME) {
         info!("processing league: {}", LEAGUE_NAME);
         if let Some(players) = league.get_players() {
-            for player in players.players() {
+            debug!("number players: {}", players.players().len());
+            for _player in players.players() {
                 // debug!("{}", player);
+            }
+            debug!("number staff: {}", players.staff().len());
+            for _staff in players.staff() {
+                // debug!("{}", staff);  // TODO
             }
         } else {
             error!("unable to read players for league {}", LEAGUE_NAME);
@@ -132,8 +137,13 @@ fn load_all_players ( ) {
     for (league_name, league) in league_info.iter_mut() {
         info!("processing league: {}", league_name);
         if let Some(players) = league.get_players() {
+            debug!("number players: {}", players.players().len());
             for player in players.players() {
                 debug!("{}", player);
+            }
+            debug!("number staff: {}", players.staff().len());
+            for staff in players.staff() {
+                debug!("{}", staff);
             }
         } else {
             error!("unable to read players for league {}", league_name);
