@@ -21,7 +21,7 @@ fn league_9_load() {
             league_file_info.load_league_data();
             // TODO: ouput week data
 
-            let league_info_path = league_file_info.datapath.join(fofdata::LEAGUEINFO_9_FILENAME);
+            let league_info_path = league_file_info.data_path().join(fofdata::LEAGUEINFO_9_FILENAME);
 
             info!("loading league info: {}", league_info_path.to_string_lossy());
             let lf = File::open(league_info_path).unwrap_or_else(|e| { panic!("Unable to open league file: {}", e) });

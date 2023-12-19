@@ -109,13 +109,21 @@ pub trait LeagueInfo {
 
 #[derive(Debug, Clone)]
 pub struct League9FileInfo {
-    pub name: String,
-    pub datapath: PathBuf,
-    pub gamepath: PathBuf,
-    pub week_index: Option<MultiMap<u16, u8>>,  // year, week
+    name: String,
+    datapath: PathBuf,
+    gamepath: PathBuf,
+    week_index: Option<MultiMap<u16, u8>>,  // year, week
 }
 
 impl League9FileInfo {
+    pub fn name ( &self ) -> &str {
+        &self.name
+    }
+
+    pub fn data_path ( &self ) -> &Path {
+        &self.datapath
+    }
+
     pub fn get_week ( &self, year: u16, week: u8 ) -> Option<Week9Data> {
         let mut file = self.get_week_file(year, week);
 
