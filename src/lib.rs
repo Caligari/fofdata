@@ -20,7 +20,7 @@ pub const LEAGUES_9_PATH: &str = "Solecismic Software\\Front Office Football Nin
 pub const LEAGUEINFO_9_FILENAME: &str = "league.dat";
 
 
-pub fn find_leagues_9 () -> BTreeMap<String, League9FileInfo> {
+pub fn find_leagues_9 () -> Leagues9List {
     info!("finding fof9 leagues");
     let base_dirs = BaseDirs::new().unwrap();
     let localdata_path = base_dirs.data_local_dir();
@@ -53,7 +53,7 @@ pub fn find_leagues_9 () -> BTreeMap<String, League9FileInfo> {
     assert!(!league_list.is_empty());
     debug!("found leagues: {:?}", league_list);
 
-    league_hash
+    Leagues9List { list: league_hash }
 }
 
 pub trait LeagueInfo {
@@ -241,6 +241,26 @@ impl LeagueInfo for League9FileInfo {
     }
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct Leagues9List {
+    list: BTreeMap<String, League9FileInfo>
+}
+
+impl Leagues9List {
+    pub fn new ( ) -> Self {
+        Leagues9List {
+            list: BTreeMap::new(),
+        }
+    }
+
+    pub fn get_league_info<S: AsRef<str>> ( &self, league_name: S ) -> Option<League9FileInfo> {
+        self.list.get(league_name.as_ref()).cloned()
+    }
+
+    pub fn league_name_list ( &self ) -> Vec<String> {
+        self.list.keys().cloned().collect()
+    }
+}
 
 #[derive(Debug)]
 pub enum Position {
@@ -289,10 +309,12 @@ mod tests {
     fn league_9_info () {
         let league_info = crate::find_leagues_9();
 
-        for (_league_name, mut league_file_info) in league_info {
-            league_file_info.load_league_data();
-            league_file_info.get_number_years();
-            league_file_info.get_years_list_reversed();
+        for league_name in league_info.league_name_list() {
+            if let Some(mut league_file_info) = league_info.get_league_info(&league_name) {
+                league_file_info.load_league_data();
+                league_file_info.get_number_years();
+                league_file_info.get_years_list_reversed();
+            } else { panic!("unable to find league {} in file info list", league_name); }
         }
     }
 }

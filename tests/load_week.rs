@@ -14,9 +14,9 @@ fn load_week ( ) {
 
     let mut done = true;
 
-    let mut league_info = fofdata::find_leagues_9();
+    let league_info = fofdata::find_leagues_9();
 
-    if let Some(league) = league_info.get_mut(LEAGUE_NAME) {
+    if let Some(mut league) = league_info.get_league_info(LEAGUE_NAME) {
         info!("processing league: {}", LEAGUE_NAME);
         league.load_league_data();
 
@@ -62,34 +62,36 @@ fn load_all_weeks ( ) {
 
     let mut done = true;
 
-    let mut league_info = fofdata::find_leagues_9();
+    let league_info = fofdata::find_leagues_9();
 
-    for (league_name, league) in league_info.iter_mut() {
+    for league_name in league_info.league_name_list() {
         info!("processing league: {}", league_name);
-        league.load_league_data();
+        if let Some(mut league) = league_info.get_league_info(&league_name){
+            league.load_league_data();
 
-        if let Some(year) = league.get_year(YEAR_SELECTION) {
-            if let Some(weeks_list) = league.get_weeks_list_for_year(year) {
-                for week_num in weeks_list {
-                    if let Some(week) = league.get_week(year, week_num) {
-                        info!("loaded week {} for year 0 ({}) in league {}", week_num, year, league_name);
-                        debug!("there are {} games in the week", week.games.len());
-                        for game in week.games.iter() {
-                            show_game(game);
+            if let Some(year) = league.get_year(YEAR_SELECTION) {
+                if let Some(weeks_list) = league.get_weeks_list_for_year(year) {
+                    for week_num in weeks_list {
+                        if let Some(week) = league.get_week(year, week_num) {
+                            info!("loaded week {} for year 0 ({}) in league {}", week_num, year, league_name);
+                            debug!("there are {} games in the week", week.games.len());
+                            for game in week.games.iter() {
+                                show_game(game);
+                            }
+                        } else {
+                            error!("unable to load week {} for year 0 ({}) in league {}", week_num, year, league_name);
+                            done = false;
                         }
-                    } else {
-                        error!("unable to load week {} for year 0 ({}) in league {}", week_num, year, league_name);
-                        done = false;
                     }
+                } else {
+                    error!("unable to find weeks in year 0 ({}) in league {}", year, league_name);
+                    done = false;
                 }
             } else {
-                error!("unable to find weeks in year 0 ({}) in league {}", year, league_name);
+                error!("unable to find year 0 in league {}", league_name);
                 done = false;
             }
-        } else {
-            error!("unable to find year 0 in league {}", league_name);
-            done = false;
-        }
+        } else { error!("unable to find file info for league {}", league_name); }
     }
 
     assert!(done);

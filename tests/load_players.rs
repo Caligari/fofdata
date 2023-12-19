@@ -15,9 +15,9 @@ fn load_alt_players ( ) {
 
     let mut done = true;
 
-    let mut league_info = fofdata::find_leagues_9();
+    let league_info = fofdata::find_leagues_9();
 
-    if let Some(league) = league_info.get_mut(LEAGUE_NAME) {
+    if let Some(league) = league_info.get_league_info(LEAGUE_NAME) {
         info!("processing league: {}", LEAGUE_NAME);
         let mut file = league.get_players_file();
 
@@ -98,9 +98,9 @@ fn load_players ( ) {
 
     let mut done = true;
 
-    let mut league_info = fofdata::find_leagues_9();
+    let league_info = fofdata::find_leagues_9();
 
-    if let Some(league) = league_info.get_mut(LEAGUE_NAME) {
+    if let Some(league) = league_info.get_league_info(LEAGUE_NAME) {
         info!("processing league: {}", LEAGUE_NAME);
         if let Some(players) = league.get_players() {
             debug!("number players: {}", players.players().len());
@@ -132,23 +132,25 @@ fn load_all_players ( ) {
 
     let mut done = true;
 
-    let mut league_info = fofdata::find_leagues_9();
+    let league_info = fofdata::find_leagues_9();
 
-    for (league_name, league) in league_info.iter_mut() {
+    for league_name in league_info.league_name_list() {
         info!("processing league: {}", league_name);
-        if let Some(players) = league.get_players() {
-            debug!("number players: {}", players.players().len());
-            for player in players.players() {
-                debug!("{}", player);
+        if let Some(league) = league_info.get_league_info(&league_name){
+            if let Some(players) = league.get_players() {
+                debug!("number players: {}", players.players().len());
+                for player in players.players() {
+                    debug!("{}", player);
+                }
+                debug!("number staff: {}", players.staff().len());
+                for staff in players.staff() {
+                    debug!("{}", staff);
+                }
+            } else {
+                error!("unable to read players for league {}", league_name);
+                done = false;
             }
-            debug!("number staff: {}", players.staff().len());
-            for staff in players.staff() {
-                debug!("{}", staff);
-            }
-        } else {
-            error!("unable to read players for league {}", league_name);
-            done = false;
-        }
+        } else { error!("unable to find league file info for {}", league_name); }
     }
 
     assert!(done);
