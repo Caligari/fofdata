@@ -45,52 +45,53 @@ pub struct AltPlayer9Data {
     #[br(temp, count = 152)]
     _data_1: Vec<u32>,
 
-    #[br(temp)]
+    // #[br(temp)]
     some1_count: u32,
     #[br(temp, count = some1_count)]
     _some1: Vec<SomeData2>,
 
-    #[br(temp)]
+    // #[br(temp)]
     some2_count: u32,
     #[br(temp, count = some2_count)]
     _some2: Vec<SomeData3>,
 
-    #[br(temp)]
+    // #[br(temp)]
     some3_count: u32,
     #[br(temp, count = some3_count)]
     _some3: Vec<SomeData3>,
 
-    #[br(temp)]
+    // #[br(temp)]
     some4_count: u32,
     #[br(temp, count = some4_count)]
     _some4: Vec<SomeData3>,
 
-    #[br(temp)]
+    // #[br(temp)]
     some5_count: u32,
     #[br(temp, count = some5_count)]
     _some5: Vec<SomeData3>,
 
-    #[br(temp)]
+    // #[br(temp)]
     past_count: u32,
     #[br(temp, count = past_count)]
     _something_1: Vec<SomeData>,
 
-    #[br(temp)]
+    // #[br(temp)]
     current_count: u32,
     #[br(temp, count = current_count)]
     _something_2: Vec<SomeData>,
 
-    #[br(temp, count = 3)]
+    #[br(count = 3)]
     _what: Vec<u32>,
 
-    #[br(temp, count = 3)]
+    #[br(count = 3)]
     _overall: Vec<RelativeStats9>,
 
-    #[br(temp, count = 101)]
-    _data_3: Vec<u32>,  // including the 7701 entries
+    #[br(count = 48)]
+    _data_3: Vec<u32>,
 
-    #[br(temp, count = 52)]
-    _data_4: Vec<u32>,  // starts with year?
+    another_count: u32,
+    #[br(count = another_count)]
+    _data_4: Vec<SomeData4>,
 }
 
 impl AltPlayer9Data {
@@ -289,11 +290,13 @@ pub struct Player9Data {
     overall_2: RelativeStats9,
     overall_3: RelativeStats9,
 
-    #[br(count = 101)]
-    data_3: Vec<u32>,  // including the 7701 entries
+    #[br(count = 48)]
+    data_3: Vec<u32>,
 
-    #[br(count = 52)]
-    data_4: Vec<u32>,  // starts with year?
+    #[br(temp)]
+    another_count: u32,
+    #[br(count = another_count)]
+    data_4: Vec<SomeData4>,
 }
 
 impl Player9Data {
@@ -373,6 +376,12 @@ pub struct SomeData3 {
     some_1: u32,
     some_2: u32,
     some_3: u32,
+}
+
+#[derive(BinRead, Debug)]
+pub struct SomeData4 {
+    #[br(count = 52)]
+    data: Vec<u32>,
 }
 
 #[derive(BinRead, Debug)]

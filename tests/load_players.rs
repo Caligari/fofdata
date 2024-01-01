@@ -10,8 +10,9 @@ fn load_alt_players ( ) {
     common::setup_logger(module_path!()).expect("log did not start");
     info!("Starting");
 
-    const LEAGUE_NAME: &str = "New_Trial";
+    // const LEAGUE_NAME: &str = "New_Trial";
     // const LEAGUE_NAME: &str = "Try_2";
+    const LEAGUE_NAME: &str = "Try_3";
 
     let mut done = true;
 
@@ -37,6 +38,9 @@ fn load_alt_players ( ) {
                                 match file.read_ne::<AltPlayer9Data>() {
                                     Ok(alt_player_data) => {
                                         debug!("{}, {}", alt_player_id.player_id(), alt_player_data.position_group());
+                                        if player_id == 1000 {
+                                            debug!("{:?}", alt_player_data);
+                                        }
                                         count += 1;
                                     },
 
@@ -93,8 +97,9 @@ fn load_players ( ) {
     common::setup_logger(module_path!()).expect("log did not start");
     info!("Starting");
 
-    const LEAGUE_NAME: &str = "New_Trial";
+    // const LEAGUE_NAME: &str = "New_Trial";
     // const LEAGUE_NAME: &str = "Try_2";
+    const LEAGUE_NAME: &str = "Try_3";
 
     let mut done = true;
 
