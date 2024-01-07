@@ -13,6 +13,7 @@ fn load_alt_players ( ) {
     // const LEAGUE_NAME: &str = "New_Trial";
     // const LEAGUE_NAME: &str = "Try_2";
     const LEAGUE_NAME: &str = "Try_3";
+    // const LEAGUE_NAME: &str = "Nawlins";
 
     let mut done = true;
 
@@ -37,7 +38,7 @@ fn load_alt_players ( ) {
                                 previous_id = player_id;
                                 match file.read_ne::<AltPlayer9Data>() {
                                     Ok(alt_player_data) => {
-                                        debug!("{}, {}", alt_player_id.player_id(), alt_player_data.position_group());
+                                        debug!("{}, {} {}", alt_player_id.player_id(), alt_player_data.position_group(), alt_player_data.name());
                                         if player_id == 1000 {
                                             debug!("{:?}", alt_player_data);
                                         }
@@ -100,6 +101,7 @@ fn load_players ( ) {
     // const LEAGUE_NAME: &str = "New_Trial";
     // const LEAGUE_NAME: &str = "Try_2";
     const LEAGUE_NAME: &str = "Try_3";
+    // const LEAGUE_NAME: &str = "Nawlins";
 
     let mut done = true;
 

@@ -182,6 +182,7 @@ pub struct MoreData9 {
 #[binread]
 #[derive(Debug)]
 pub struct StaffData9 {
+    // #[br(dbg)]
     staff_id: u32,
     firstname: FixedString,
     lastname: FixedString,
@@ -194,8 +195,14 @@ pub struct StaffData9 {
     #[br(count = list_count)]
     list: Vec<StaffListItem9>,
 
-    #[br(count = 10)]
+    #[br(temp)]
+    last_count: u32,
+    #[br(count = last_count)]
+    last_thing: Vec<StaffSmall1>,
+
+    #[br(count = 9)]
     stuff_2: Vec<u32>,
+
 }
 
 impl StaffData9 {
@@ -222,9 +229,16 @@ impl Display for StaffData9 {
 
 #[binread]
 #[derive(Debug)]
+pub struct StaffSmall1 {
+    #[br(count = 2)]
+    stuff: Vec<u32>,
+}
+
+#[binread]
+#[derive(Debug)]
 pub struct StaffListItem9 {
     #[br(count = 7)]
-    stuff: Vec<u32>
+    stuff: Vec<u32>,
 }
 
 #[binread]
