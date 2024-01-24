@@ -47,15 +47,20 @@ pub struct League9Data {
     pub structure_name: FixedString,
     unknown20: u32,
     unknown21: u32,
+    unknown22: u32,  // is this a count for something? or an id num? or a bool (there is a custom calendar)?
+    pub calendar_path: FixedString,
 
-    #[br(count = 12)]
+    #[br(count = 10)]
     ignored1: Vec<u32>,
 
     // count_b: u32,  // 2248
     // #[br(count = count_b)]
     // data_b: Vec<ItemB>,  // 112,400?
-    #[br(count = 112996)]  // was pad_before = 0x6e590
+    #[br(count = 112474)]  // was 112996; // was pad_before = 0x6e590
     pad2: Vec<u32>,
+
+    #[br(count = 522)]
+    pad3: Vec<u32>,
 
     pub teams_len: u32,
     #[br(count = teams_len)]
@@ -63,7 +68,7 @@ pub struct League9Data {
 
     // #[br(count = 27216)]
     #[br(parse_with = until_eof)]  // TODO: understand this final section
-    pad3: Vec<u32>,
+    pad4: Vec<u32>,
 }
 
 #[derive(BinRead, BinWrite, Debug)]
