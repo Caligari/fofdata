@@ -5,7 +5,7 @@ use num_traits::FromPrimitive;
 use crate::fof9_utility::FixedString;
 
 
-#[derive(BinRead, BinWrite, Debug)]
+#[derive(BinRead, BinWrite, Debug, Clone)]
 #[brw(magic = b"\x0c\0\0\0STRUCTLEAGUE")]  // what is the Z? and three NULLs?
 pub struct League9Data {
     data_version: u32,  // ?
@@ -48,7 +48,7 @@ pub struct League9Data {
     unknown20: u32,
     unknown21: u32,
     unknown22: u32,  // is this a count for something? or an id num? or a bool (there is a custom calendar)?
-    pub calendar_path: FixedString,
+    pub custom_data_path: FixedString,
 
     #[br(count = 10)]
     ignored1: Vec<u32>,
@@ -87,7 +87,7 @@ pub struct ItemB {  // !! needs to be 50 u32 items
     data12:u32,
 }
 
-#[derive(BinRead, BinWrite, Debug)]
+#[derive(BinRead, BinWrite, Debug, Clone)]
 pub struct CalendarItem {
     pub number: u32,
     pub month: u32,
@@ -101,7 +101,7 @@ pub struct CalendarItem {
     pub some6: u32,
 }
 
-#[derive(BinRead, BinWrite, Debug)]
+#[derive(BinRead, BinWrite, Debug, Clone)]
 pub struct TeamInfo {
     #[bw(map = |n| n+1)]
     #[br(map = |n:u32| n-1)]
@@ -117,7 +117,13 @@ pub struct TeamInfo {
     #[br(count = 200)]
     pub playbook: Vec<PlaybookPlayInfo>,
 
-    #[br(count = 113462)]  // was pad_before = 0x6ecd8
+    #[br(count = 100)]
+    empty_1: Vec<u32>,
+
+    #[br(count = 128)]
+    pub team_players: Vec<u32>,
+
+    #[br(count = 113234)]  // was pad_before = 0x6ecd8
     pad1: Vec<u32>,
 
     #[br(count = 6)]
@@ -137,14 +143,14 @@ pub struct TeamInfo {
     data4: Vec<u32>,
 }
 
-#[derive(BinRead, BinWrite, Debug)]
+#[derive(BinRead, BinWrite, Debug, Clone)]
 pub struct PlaybookPlayInfo {
     #[br(count = 18)]
     data: Vec<u32>,
     pub play_name: FixedString,
 }
 
-#[derive(BinRead, BinWrite, Debug)]
+#[derive(BinRead, BinWrite, Debug, Clone)]
 pub struct DivisionInfo {
     pub division_name: FixedString,
     pub number_teams: u32,

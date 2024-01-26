@@ -156,9 +156,13 @@ impl Players9Data {
         &self.players
     }
 
-    pub fn max_player_id ( &self ) -> u32 {
-        self.players.len() as u32
+    pub fn player_data ( &self, player_id: u32 ) -> Option<&Player9Data> {
+        self.players.iter().find(|&p| p.player_id() == player_id)
     }
+
+    // pub fn max_player_id ( &self ) -> u32 {
+    //     self.players.len() as u32
+    // }
 
     pub fn staff ( &self ) -> &Vec<StaffData9> {
         &self.staff
@@ -336,7 +340,8 @@ impl Display for Player9Data {
         write!(f, "{}, {}|{}, {}, {} {}", self.player_id,
         self.position, self.position_group,
         self.years_experience,
-        self.firstname, self.lastname)
+        self.firstname, self.lastname,
+    )
     }
 }
 

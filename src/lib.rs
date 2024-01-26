@@ -37,7 +37,7 @@ pub fn find_leagues_9 () -> Leagues9List {
                 let l = e.path().file_stem().unwrap().to_string_lossy().to_string().to_owned();
                 let l_p = Path::new(&l);
                 let lg_pathbuf = leagues_pathbuf.join(l_p);
-                Some((l.clone(), League9FileInfo{name: l, datapath: p.to_path_buf().to_owned(), gamepath: lg_pathbuf.to_owned(), week_index: None}))
+                Some((l.clone(), League9FileInfo{name: l, datapath: p.to_path_buf().to_owned(), gamepath: lg_pathbuf.to_owned(), week_index: None, league_data: None}))
             }
             else {
                 warn!("league not a file: {}", p.to_string_lossy());
@@ -113,6 +113,7 @@ pub struct League9FileInfo {
     datapath: PathBuf,
     gamepath: PathBuf,
     week_index: Option<MultiMap<u16, u8>>,  // year, week
+    league_data: Option<League9Data>,
 }
 
 impl League9FileInfo {
@@ -122,6 +123,12 @@ impl League9FileInfo {
 
     pub fn data_path ( &self ) -> &Path {
         &self.datapath
+    }
+
+    pub fn data ( &self ) -> Option<&League9Data> {
+        if let Some(data) = &self.league_data {
+            Some(data)
+        } else { None }
     }
 
     pub fn get_week ( &self, year: u16, week: u8 ) -> Option<Week9Data> {
@@ -156,6 +163,26 @@ impl League9FileInfo {
 
     pub fn get_portraits_path ( &self ) -> PathBuf {
         self.datapath.join("portraits")
+    }
+
+    pub fn load_data ( &mut self ) {
+        let league_info_path = self.datapath.join(LEAGUEINFO_9_FILENAME);
+
+        info!("loading league info from: {}", league_info_path.to_string_lossy());
+        let lf = File::open(league_info_path).unwrap_or_else(|e| { panic!("Unable to open league file: {}", e) });  // TODO: no panic
+        let mut leaguefile = BufReader::new(lf);
+        debug!("opened league file");
+        let league_info_result: Result<League9Data, binrw::Error> = leaguefile.read_ne();
+        match league_info_result {
+            Ok(league_info) => {
+                debug!("league: {}", league_info.league_name.string);
+                self.league_data = Some(league_info);
+            },
+
+            Err(err) => {
+                error!("unable to parse league: {:?}", err);
+            }
+        }
     }
 }
 
@@ -216,35 +243,24 @@ impl LeagueInfo for League9FileInfo {
     }
 
     fn get_teams_list ( &self ) -> Vec<String> {
-        let league_info_path = self.datapath.join(LEAGUEINFO_9_FILENAME);
-
-        info!("loading league info from: {}", league_info_path.to_string_lossy());
-        let lf = File::open(league_info_path).unwrap_or_else(|e| { panic!("Unable to open league file: {}", e) });  // TODO: no panic
-        let mut leaguefile = BufReader::new(lf);
-        debug!("opened league file");
-        let league_info_result: Result<League9Data, binrw::Error> = leaguefile.read_ne();
-        match league_info_result {
-            Ok(league_info) => {
-                debug!("league: {}", league_info.league_name.string);
-                debug!("league number of teams: {}", league_info.number_teams);
-                if league_info.number_teams != league_info.teams_len {
-                    error!("league number of teams does not equal length of teams list ({})", league_info.teams_len);
-                    Vec::new()
-                } else {
-                    let mut team_info = BTreeMap::<String, usize>::new();
-                    for team in &league_info.teams {
-                        team_info.insert(team.team_city.to_string(), usize::from_u32(team.team_number).unwrap());  // TODO: better checking
-                    }
-                    let teams: Vec<String> = team_info.keys().cloned().collect();
-                    debug!("all teams: {:?}", teams);
-                    teams
-                }
-            },
-
-            Err(err) => {
-                error!("unable to parse league: {:?}", err);
+        if let Some(league_info) = &self.league_data {
+            debug!("league: {}", league_info.league_name.string);
+            debug!("league number of teams: {}", league_info.number_teams);
+            if league_info.number_teams != league_info.teams_len {
+                error!("league number of teams does not equal length of teams list ({})", league_info.teams_len);
                 Vec::new()
+            } else {
+                let mut team_info = BTreeMap::<String, usize>::new();
+                for team in &league_info.teams {
+                    team_info.insert(team.team_city.to_string(), usize::from_u32(team.team_number).unwrap());  // TODO: better checking
+                }
+                let teams: Vec<String> = team_info.keys().cloned().collect();
+                debug!("all teams: {:?}", teams);
+                teams
             }
+        } else {
+            error!("no league data present");
+            Vec::new()
         }
     }
 }

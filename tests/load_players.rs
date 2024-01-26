@@ -1,5 +1,5 @@
 use fofdata::{LeagueInfo, AltPlayers9Header, AltPlayer9Data, AltPlayer9Id};
-use log::{info, error, debug};
+use log::{debug, error, info, warn};
 use binrw::BinReaderExt;
 
 mod common;
@@ -98,9 +98,9 @@ fn load_players ( ) {
     common::setup_logger(module_path!()).expect("log did not start");
     info!("Starting");
 
-    // const LEAGUE_NAME: &str = "New_Trial";
+    const LEAGUE_NAME: &str = "New_Trial";
     // const LEAGUE_NAME: &str = "Try_2";
-    const LEAGUE_NAME: &str = "Try_3";
+    // const LEAGUE_NAME: &str = "Try_3";
     // const LEAGUE_NAME: &str = "Nawlins";
 
     let mut done = true;
@@ -111,7 +111,7 @@ fn load_players ( ) {
         info!("processing league: {}", LEAGUE_NAME);
         if let Some(players) = league.get_players() {
             debug!("number players: {}", players.players().len());
-            for _player in players.players() {
+            for player in players.players() {
                 // debug!("{}", player);
             }
             debug!("number staff: {}", players.staff().len());
@@ -129,6 +129,59 @@ fn load_players ( ) {
 
     assert!(done);
 }
+
+#[test]
+fn load_team_players ( ) {
+    common::setup_logger(module_path!()).expect("log did not start");
+    info!("Starting");
+
+    const LEAGUE_NAME: &str = "New_Trial";
+    // const LEAGUE_NAME: &str = "Try_2";
+    // const LEAGUE_NAME: &str = "Try_3";
+    // const LEAGUE_NAME: &str = "Nawlins";
+
+    let mut done = true;
+
+    let league_info = fofdata::find_leagues_9();
+
+    if let Some(mut league) = league_info.get_league_info(LEAGUE_NAME) {
+        info!("processing league: {}", LEAGUE_NAME);
+        if let Some(players) = league.get_players() {
+            debug!("number players: {}", players.players().len());
+
+            league.load_data();
+            let team = 0;
+
+            if let Some(league_data) = league.data() {
+                for player_id in &league_data.teams[team].team_players {
+                    if let Some(player) = players.player_data(*player_id) {
+                        debug!("{}", player);
+                    } else {
+                        debug!("{}", player_id)
+                    }
+                }
+            }  else { warn!("!! No league_data available") }
+
+            // for player in players.players() {
+            //     // debug!("{}", player);
+            // }
+            debug!("number staff: {}", players.staff().len());
+            // for _staff in players.staff() {
+            //     // debug!("{}", staff);  // TODO
+            // }
+        } else {
+            error!("unable to read players for league {}", LEAGUE_NAME);
+            done = false;
+        }
+    } else {
+        error!("unable to find league {}", LEAGUE_NAME);
+        done = false;
+    }
+
+    assert!(done);
+}
+
+
 
 #[test]
 fn load_all_players ( ) {
