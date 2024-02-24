@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use binrw::{binread, BinRead};
 
-use crate::fof9_utility::FixedString;
+use crate::fof9_utility::{Date, FixedString, LengthInches};
 
 #[binread]
 #[derive(Debug)]
@@ -251,7 +251,7 @@ pub struct Player9Data {
     // #[br(dbg)]
     player_id: u32,
     firstname: FixedString,
-    middlename: FixedString,
+    nickname: FixedString,
     lastname: FixedString,
 
     position: PlayerPosition9,
@@ -259,7 +259,45 @@ pub struct Player9Data {
     some_1: u32,
     years_experience: u32,
 
-    #[br(count = 150)]
+    #[br(count = 9)]
+    notsure: Vec<u32>,
+
+    unclear_1: u32,
+    unclear_2: u32,
+
+    // #[br(count = 23)]
+    // info_1: Vec<u32>,
+
+    height: LengthInches,
+    hand: LengthInches,
+    arm: LengthInches,
+    weight: u32,  // lbs
+
+    birth: Date,  // 3 u32
+
+    #[br(count = 2)]
+    home: Vec<u32>,  // not translated
+
+    college_1: u32,  // enrolled?
+    college_2: u32,  // graduated?
+
+    first_draft_year: u32,
+    allocation_draft_year: u32,
+    draft_overall: u32,
+    draft_round: u32,
+    draft_pick: u32,  // in round
+
+    blank_1: u32,
+    draft_team: u32,  // 99 = undrafted
+    blank_2: u32,
+
+    notsure_1: u32,
+    notsure_2: u32,
+
+    jersey_number: u32,  // invalid unless in current team
+    current_team: u32,  // 99 = no team
+
+    #[br(count = 116)]  // 150 - 11, - 23 = 116
     data_1: Vec<u32>,
 
     year_1: u32,
@@ -333,15 +371,23 @@ impl Player9Data {
     pub fn name ( &self ) -> String {
         format!("{} {}", self.firstname, self.lastname)
     }
+
+    pub fn team_id ( &self ) -> Option<usize> {
+        if self.current_team != 99 {
+            Some(self.current_team as usize)
+        } else { None }
+    }
 }
 
 impl Display for Player9Data {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}, {}|{}, {}, {} {}", self.player_id,
-        self.position, self.position_group,
-        self.years_experience,
-        self.firstname, self.lastname,
-    )
+        write!(f, "{}, {}|{}, {}, {} {}{}",
+            self.player_id,
+            self.position, self.position_group,
+            self.years_experience,
+            self.firstname, self.lastname,
+            if self.current_team != 99 { format!(", team {}", self.current_team) } else { String::new() },
+        )
     }
 }
 
